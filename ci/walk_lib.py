@@ -41,6 +41,10 @@ def clickable_for(r, t):
 def checkables(r):
     return [n for n in r.iter("node") if n.get("checkable") == "true"]
 
+def contains(outer, inner):
+    o, i = box(outer), box(inner)
+    return o is not None and i is not None and o[0] <= i[0] and o[1] <= i[1] and o[2] >= i[2] and o[3] >= i[3]
+
 def in_app(r):
     return any(n.get("package") == PKG for n in r.iter("node"))
 
@@ -119,12 +123,18 @@ def run(dev, log):
         return "FAIL", "Settings Accessibility list with Roxxy not shown"
     dev.tap(clickable_for(r, "Roxxy"))
     r = dev.dump("a2_service_page")
-    sw2 = checkables(r)
-    if in_app(r) or not sw2:
-        return "FAIL", "service page with a toggle not shown"
-    if len(sw2) != 1:
-        return "FAIL", "ambiguous: %d toggles on service page" % len(sw2)
-    dev.tap(sw2[0])
+    if in_app(r):
+        return "FAIL", "service page not shown"
+    bars = [n for n in r.iter("node") if n.get("text") == "Use Roxxy"]
+    main_row = clickable_for(r, "Use Roxxy") if len(bars) == 1 else None
+    if main_row is None or main_row.get("clickable") != "true":
+        return "FAIL", "ambiguous: cannot identify the single 'Use Roxxy' main toggle row (%d labels)" % len(bars)
+    inside = [c for c in checkables(r) if contains(main_row, c)]
+    if len(inside) != 1:
+        return "FAIL", "ambiguous: %d switches inside the 'Use Roxxy' row" % len(inside)
+    if inside[0].get("checked") == "true":
+        log("service already on")
+    dev.tap(main_row)
     r = dev.dump("a3_after_toggle")
     ctx = [t for t in texts(r) if "Roxxy" in t]
     allow = find_text(r, "Allow", "OK", "Turn on")
@@ -138,7 +148,8 @@ def run(dev, log):
     elif any(n.get("resource-id") == "android:id/button1" for n in r.iter("node")):
         return "FAIL", "dialog with unrecognized affirmative label; not approving"
     else:
-        c3 = checkables(r)
+        row3 = clickable_for(r, "Use Roxxy")
+        c3 = [c for c in checkables(r) if row3 is not None and contains(row3, c)]
         if in_app(r) or not c3 or c3[0].get("checked") != "true":
             return "FAIL", "toggle neither showed a confirm dialog nor turned on (OS blocked or unknown dialog)"
     for j in range(3):

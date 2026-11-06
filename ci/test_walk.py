@@ -16,14 +16,14 @@ SYSTEM = lambda: screen(node(text="Accessibility", pkg="com.android.settings"), 
 
 def row(text, bounds="[0,254][320,333]"): return node(clickable="true", bounds=bounds, children=[node(text=text)])
 def settings_list(): return screen(node(text="Downloaded apps", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Roxxy", pkg="com.android.settings")]), pkg="com.android.settings")
-def service_page(): return screen(node(text="Use Roxxy", pkg="com.android.settings"), node(checkable="true", clickable="true", pkg="com.android.settings"), pkg="com.android.settings")
+def service_page(checked="false"): return screen(node(clickable="true", pkg="com.android.settings", bounds="[0,203][320,311]", children=[node(text="Use Roxxy", pkg="com.android.settings", bounds="[44,243][204,271]"), node(checkable="true", checked=checked, pkg="com.android.settings", bounds="[228,233][284,281]")]), node(checkable="true", clickable="true", pkg="com.android.settings", bounds="[232,362][304,441]"), pkg="com.android.settings")
 def dialog(): return screen(node(text="Allow Roxxy full control?", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Allow", pkg="com.android.settings")]), pkg="com.android.settings")
 def other_dialog(): return screen(node(text="Allow something else?", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Allow", pkg="com.android.settings")]), pkg="com.android.settings")
 def odd_dialog():
     b = node(text="Proceed", clickable="true", pkg="com.android.settings"); b.set("resource-id", "android:id/button1")
     return screen(node(text="Roxxy wants control", pkg="com.android.settings"), b, pkg="com.android.settings")
-def blocked_page(): return screen(node(text="Use Roxxy", pkg="com.android.settings"), node(checkable="true", clickable="true", checked="false", pkg="com.android.settings"), pkg="com.android.settings")
-def two_toggles(): return screen(node(checkable="true", clickable="true", pkg="com.android.settings"), node(checkable="true", clickable="true", pkg="com.android.settings"), pkg="com.android.settings")
+def blocked_page(): return service_page("false")
+def two_toggles(): return screen(node(checkable="true", clickable="true", pkg="com.android.settings", bounds="[1,1][2,2]"), node(checkable="true", clickable="true", pkg="com.android.settings", bounds="[3,3][4,4]"), pkg="com.android.settings")
 def skip_screen(txt="Voice and the floating overlay stay off until you enable them."): return screen(node(text="Microphone Access"), node(checkable="true", clickable="true", bounds="[20,80][300,130]"), node(text=txt), node(clickable="true", children=[node(text="Skip for now")]))
 def mic_dialog(): return screen(node(text="Allow Roxxy to record audio?", pkg="com.android.permissioncontroller"), node(clickable="true", pkg="com.android.permissioncontroller", children=[node(text="Don\u2019t allow", pkg="com.android.permissioncontroller")]), pkg="com.android.permissioncontroller")
 def plain_stage(): return screen(node(text="Roxxy Virtual Keyboard"), node(clickable="true", children=[node(text="Skip for now")]))
@@ -104,6 +104,17 @@ class T(unittest.TestCase):
     def test_fail_key_step_not_reached(self):
         seq = self.full(); seq[-1] = plain_stage()
         res, _, _ = go(seq); self.assertEqual(res[0], "FAIL")
+    def test_real_service_page_dump_selects_use_roxxy_row(self):
+        r = load("service_page_real")
+        self.assertEqual(len(W.checkables(r)), 2)  # the ambiguity that stopped the 20:37 run
+        row = W.clickable_for(r, "Use Roxxy")
+        self.assertEqual(row.get("resource-id"), "com.android.settings:id/main_switch_bar")
+        inside = [c for c in W.checkables(r) if W.contains(row, c)]
+        self.assertEqual(len(inside), 1); self.assertEqual(inside[0].get("resource-id"), "android:id/switch_widget")
+        self.assertEqual(inside[0].get("checked"), "false")
+    def test_real_settings_list_has_single_roxxy_row(self):
+        r = load("settings_list_real"); self.assertEqual(len([n for n in r.iter("node") if n.get("text") == "Roxxy"]), 1)
+        self.assertEqual(W.clickable_for(r, "Roxxy").get("clickable"), "true")
     def test_fail_ambiguous_toggles(self):
         res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), two_toggles()])
         self.assertEqual(res[0], "FAIL"); self.assertIn("ambiguous", res[1])

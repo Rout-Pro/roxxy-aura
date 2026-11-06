@@ -37,8 +37,8 @@ def graph(**over):
      "name": {"xml": "name.xml", "trans": {"Next": "info"}},
      "info": {"xml": "info.xml", "trans": {"Next": "acc"}},
      "acc": {"xml": "acc.xml", "trans": {"CHECK": "list"}},
-     "list": {"xml": "list.xml", "trans": {"Roxxy": "service"}},
-     "service": {"xml": "service.xml", "trans": {"CHECK": "dialog"}},
+     "list": {"xml": "settings_list_real.xml", "trans": {"Roxxy": "service"}},
+     "service": {"xml": "service_page_real.xml", "trans": {"Use Roxxy": "dialog"}},
      "dialog": {"xml": "dialog.xml", "trans": {"Allow": "service_on"}},
      "service_on": {"xml": "service_on.xml", "trans": {"BACK": "s5"}},
      "s5": {"xml": "s5.xml", "trans": {"CHECK": "mic", "Skip for now": "s6"}},
@@ -77,7 +77,7 @@ class E2E(unittest.TestCase):
         for f in ("walk_1_landing.xml", "walk_3_agreement_checked.png", "walk_a1_settings_list.xml", "walk_b2_mic_denied.xml", "walk_b5_after_skip.xml", "pid_after.txt", "errors_after_walk.txt", "logcat.txt", "shot_10.png", "ui_25.xml"):
             self.assertTrue(os.path.exists(os.path.join(out, f)), f)
     def test_unknown_dialog_fails_nonzero_and_keeps_evidence(self):
-        g = graph(); g["states"]["service"]["trans"]["CHECK"] = "dialog_other"; g["states"]["dialog_other"] = {"xml": "dialog_other.xml", "trans": {"Allow": "service_on"}}
+        g = graph(); g["states"]["service"]["trans"]["Use Roxxy"] = "dialog_other"; g["states"]["dialog_other"] = {"xml": "dialog_other.xml", "trans": {"Allow": "service_on"}}
         p, out, log = self.run_harness(g)
         self.assertNotEqual(p.returncode, 0); self.assertIn("RESULT: FAIL - unknown dialog", log)
         self.assertTrue(os.path.exists(os.path.join(out, "walk_a3_after_toggle.png")))
