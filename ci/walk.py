@@ -39,4 +39,5 @@ if __name__ == "__main__":
     print("size h:", dev.screen_h)
     status, detail = W.run(dev, print)
     print("RESULT:", status, "-", detail)
-    print("NOT EXERCISED: remaining mandatory permission steps and the key gate")
+    print("NOT EXERCISED: anything after the key gate; nothing is entered there")
+    sys.exit(0 if status == "STOP" else 1)

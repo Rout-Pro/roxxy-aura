@@ -19,6 +19,11 @@ echo "--- errors:"; cat out/errors.txt
 echo "--- ui text:"; grep -o 'text="[^"]\+"' out/ui_25.xml | head -30
 
 # ---- walk onboarding (semantic selectors from the UI dump; one bounded pass) ----
-python3 ci/walk.py 2>&1 | tee out/walk_log.txt
+python3 ci/walk.py 2>&1 | tee out/walk_log.txt; walk_rc=${PIPESTATUS[0]}
 adb logcat -d | grep -E "FATAL EXCEPTION|ANR in" | head -10 > out/errors_after_walk.txt; echo "--- fatal/anr after walk:"; cat out/errors_after_walk.txt
 adb shell pidof $PKG > out/pid_after.txt 2>&1; echo "pid after: $(cat out/pid_after.txt)"
+rc=$walk_rc
+if [ -s out/errors_after_walk.txt ]; then echo "FAIL: FATAL/ANR in logcat"; rc=1; fi
+if ! grep -qE "^[0-9]+" out/pid_after.txt; then echo "FAIL: app process not running after walk"; rc=1; fi
+echo "harness exit code: $rc"
+exit $rc
