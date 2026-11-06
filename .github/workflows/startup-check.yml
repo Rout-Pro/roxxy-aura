@@ -1,4 +1,4 @@
-name: Startup check (debug build on emulator)
+name: Startup check (release config + x86_64 ABI, emulator)
 on: workflow_dispatch
 jobs:
   startup:
@@ -11,9 +11,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-      - name: Build debug APK
+      - name: Build RELEASE-config validation APK (only difference vs shipped file - extra x86_64 ABI)
         working-directory: aura-android
-        run: chmod +x gradlew && ./gradlew :app:assembleDebug --no-daemon
+        env:
+          KS_B64: ${{ secrets.ROXXY_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ROXXY_KEYSTORE_PASSWORD }}
+        run: |
+          sed -i 's/abiFilters += listOf("arm64-v8a", "armeabi-v7a")/abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")/' app/build.gradle.kts
+          grep -n 'abiFilters += listOf' app/build.gradle.kts
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/roxxy.jks"
+          { echo "aura.releaseStoreFile=$RUNNER_TEMP/roxxy.jks"; echo "aura.releaseStorePassword=$KS_PASS"; echo "aura.releaseKeyAlias=roxxy"; echo "aura.releaseKeyPassword=$KS_PASS"; } >> local.properties
+          chmod +x gradlew && ./gradlew :app:assembleRelease --no-daemon
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

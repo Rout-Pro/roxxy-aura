@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Installs the debug APK on the emulator, launches it, and records screenshots, UI text and logcat.
 set -u
-APK=$(ls aura-android/app/build/outputs/apk/debug/*.apk | head -1)
-PKG=com.roxxy.aura.debug
+APK=$(ls aura-android/app/build/outputs/apk/release/*.apk | head -1)
+PKG=com.roxxy.aura
 mkdir -p out
 adb install -r -g "$APK" > out/install.txt 2>&1; cat out/install.txt
 adb logcat -c
@@ -23,7 +23,9 @@ cat > /tmp/walk.py <<'PY'
 import subprocess,re,sys,time
 def sh(c): return subprocess.run(c,shell=True,capture_output=True,text=True).stdout
 want=["Get Started","Accept Terms","I Understand","Next","Skip","Continue"]
-for i in range(1,11):
+prev=None
+done_cb=False
+for i in range(1,13):
     sh("adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1; adb pull /sdcard/w.xml out/walk_%d.xml >/dev/null 2>&1"%i)
     x=open("out/walk_%d.xml"%i).read() if __import__('os').path.exists("out/walk_%d.xml"%i) else ""
     sh("adb exec-out screencap -p > out/walk_%d.png"%i)
@@ -32,9 +34,13 @@ for i in range(1,11):
     for w in want:
         m=re.search(r'text="%s"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"'%re.escape(w),x)
         if m: tgt=m;break
-    if not tgt:
-        # tap any checkbox-like clickable first (policy accept)
-        m=re.search(r'clickable="true"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',x); tgt=m
+    if i>1 and prev==texts[:8] and not done_cb:
+        # stuck: tap the policy checkbox (narrow clickable in the lower half), else the first clickable
+        cands=[tuple(map(int,mm.groups())) for mm in re.finditer(r'clickable="true"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',x)]
+        cands=[c for c in cands if c[2]-c[0]<120 and c[1]>300]
+        if cands:
+            a,b,c,d=cands[0]; sh("adb shell input tap %d %d"%((a+c)//2,(b+d)//2)); time.sleep(3); prev=texts[:8]; done_cb=True; continue
+    prev=texts[:8]
     if not tgt: break
     a,b,c,d=map(int,tgt.groups()); sh("adb shell input tap %d %d"%((a+c)//2,(b+d)//2)); time.sleep(4)
 PY
