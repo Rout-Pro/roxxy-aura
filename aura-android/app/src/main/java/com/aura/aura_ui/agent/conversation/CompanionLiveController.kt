@@ -895,6 +895,19 @@ class CompanionLiveController(
     }
 
     private fun startMic() {
+        // Roxxy: the microphone permission is optional at setup, so check it here instead of
+        // letting AudioRecord fail silently.
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.RECORD_AUDIO,
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w(TAG, "startMic: RECORD_AUDIO not granted; voice stays off")
+            ui {
+                viewModel.updatePhase(ConversationPhase.IDLE)
+                viewModel.updatePartialTranscript("Microphone permission is off. Turn it on from the Roxxy home screen banner or Android Settings.")
+            }
+            return
+        }
         // `driving` is deliberately NOT a bar any more: a task no longer means a dead mic, it means
         // a GATED one ([TaskAudioGate], applied in streamMic). Keeping the old guard here would
         // silently defeat mid-task listening whenever the mic had to be (re)started during a run.

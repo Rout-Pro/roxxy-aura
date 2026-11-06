@@ -122,12 +122,20 @@ def run(dev, log):
     sw2 = checkables(r)
     if in_app(r) or not sw2:
         return "FAIL", "service page with a toggle not shown"
+    if len(sw2) != 1:
+        return "FAIL", "ambiguous: %d toggles on service page" % len(sw2)
     dev.tap(sw2[0])
     r = dev.dump("a3_after_toggle")
-    allow = find_text(r, "Allow", "OK", "Turn on", "Use Roxxy")
-    if allow is not None and clickable_for(r, allow.get("text")) is not None and allow.get("text") != "Use Roxxy":
-        dev.tap(clickable_for(r, allow.get("text")))
+    btn1 = [n for n in r.iter("node") if n.get("resource-id") == "android:id/button1"]
+    allow = btn1[0] if btn1 else find_text(r, "Allow", "OK", "Turn on")
+    if allow is not None:
+        log("confirm dialog button: %r" % (allow.get("text"),))
+        dev.tap(allow if allow.get("clickable") == "true" else (clickable_for(r, allow.get("text")) or allow))
         r = dev.dump("a4_after_confirm")
+    else:
+        c3 = checkables(r)
+        if in_app(r) or not c3 or c3[0].get("checked") != "true":
+            return "FAIL", "toggle neither showed a confirm dialog nor turned on (OS blocked or unknown dialog)"
     for j in range(3):
         if in_app(r):
             break

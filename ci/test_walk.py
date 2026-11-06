@@ -18,6 +18,8 @@ def row(text, bounds="[0,254][320,333]"): return node(clickable="true", bounds=b
 def settings_list(): return screen(node(text="Downloaded apps", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Roxxy", pkg="com.android.settings")]), pkg="com.android.settings")
 def service_page(): return screen(node(text="Use Roxxy", pkg="com.android.settings"), node(checkable="true", clickable="true", pkg="com.android.settings"), pkg="com.android.settings")
 def dialog(): return screen(node(text="Allow Roxxy full control?", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Allow", pkg="com.android.settings")]), pkg="com.android.settings")
+def blocked_page(): return screen(node(text="Use Roxxy", pkg="com.android.settings"), node(checkable="true", clickable="true", checked="false", pkg="com.android.settings"), pkg="com.android.settings")
+def two_toggles(): return screen(node(checkable="true", clickable="true", pkg="com.android.settings"), node(checkable="true", clickable="true", pkg="com.android.settings"), pkg="com.android.settings")
 def skip_screen(txt="Voice and the floating overlay stay off until you enable them."): return screen(node(text="Microphone Access"), node(checkable="true", clickable="true", bounds="[20,80][300,130]"), node(text=txt), node(clickable="true", children=[node(text="Skip for now")]))
 def mic_dialog(): return screen(node(text="Allow Roxxy to record audio?", pkg="com.android.permissioncontroller"), node(clickable="true", pkg="com.android.permissioncontroller", children=[node(text="Don\u2019t allow", pkg="com.android.permissioncontroller")]), pkg="com.android.permissioncontroller")
 def plain_stage(): return screen(node(text="Roxxy Virtual Keyboard"), node(clickable="true", children=[node(text="Skip for now")]))
@@ -98,4 +100,13 @@ class T(unittest.TestCase):
     def test_fail_key_step_not_reached(self):
         seq = self.full(); seq[-1] = plain_stage()
         res, _, _ = go(seq); self.assertEqual(res[0], "FAIL")
+    def test_fail_ambiguous_toggles(self):
+        res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), two_toggles()])
+        self.assertEqual(res[0], "FAIL"); self.assertIn("ambiguous", res[1])
+    def test_fail_os_blocks_enable(self):
+        res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), blocked_page()])
+        self.assertEqual(res[0], "FAIL"); self.assertIn("OS blocked", res[1])
+    def test_skip_and_missing_permission_copy_present_in_source(self):
+        src = open(os.path.join(os.path.dirname(__file__), "..", "aura-android/app/src/main/java/com/aura/aura_ui/presentation/screens/onboarding/OnboardingScreen.kt")).read()
+        for needle in ("Skip for now", "stay off until you enable them", "will fail until you enable its keyboard"): self.assertIn(needle, src)
 if __name__ == "__main__": unittest.main()

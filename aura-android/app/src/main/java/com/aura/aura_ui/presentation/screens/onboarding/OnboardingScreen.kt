@@ -390,7 +390,7 @@ fun OnboardingScreen(
         if (step in 5..7) {
             val skipNote = when (step) {
                 5 -> "Voice and the floating overlay stay off until you enable them."
-                6 -> "Roxxy cannot type into fields until you enable its keyboard."
+                6 -> "Typing into some apps (games, canvas-style fields) will fail until you enable its keyboard."
                 else -> "Notification alerts and quick replies stay off until you enable them."
             }
             Column(
