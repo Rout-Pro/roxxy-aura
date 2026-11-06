@@ -15,7 +15,7 @@ Roxxy is an Android assistant that can read your screen and tap, type and scroll
 - Install is a sideloaded APK. Android will show a Play Protect prompt for apps from outside the Play Store.
 - It needs the Accessibility permission, which lets it see and operate other apps. Only grant it if you accept that.
 - You supply your own AI provider key in the app. Provider usage costs are charged by the provider to you.
-- This fork was built and checked by CI (compile and unit tests). It has not been verified on a real phone by the person who made the changes. Treat it as a test build.
+- This fork was built and checked by CI (compile and unit tests). It has not been verified on a real phone by the person who made the changes. Treat it as a test build. Network use: your AI provider, web search/fetch, optional Hugging Face voice models; see in-app Privacy.
 
 ## Build
 

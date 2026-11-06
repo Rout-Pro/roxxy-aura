@@ -8,9 +8,6 @@ package com.aura.aura_ui.presentation.screens.legal
 
 object LegalCopy {
 
-    const val CONTACT_EMAIL = "the Roxxy repository issue tracker on GitHub"
-    const val PRIVACY_URL = "https://github.com/Rout-Pro/roxxy-aura"
-    const val TERMS_URL = "https://github.com/Rout-Pro/roxxy-aura"
 
     val PRIVACY = """
 Roxxy - Privacy
@@ -27,26 +24,30 @@ which described that backend.
 What Roxxy does on your phone
 Roxxy can read what is on your screen and tap, type and scroll in other apps through
 Android's Accessibility service, when you ask it to. It may use the microphone,
-camera-free screenshots, notifications and contacts only if you grant those
-permissions. Known banking, payment and authenticator apps are blocked by the app's
-own rules. That list cannot cover every app.
+screenshots, notifications and contacts only if you grant those permissions. Known
+banking, payment and authenticator apps are blocked by the app's own rules. That list
+cannot cover every app.
 
-Where your data goes
-Roxxy has no server of its own. Text, screen content and audio needed for a task are
-sent from your phone directly to the AI provider you choose and configure with your own
-API key (for example Google Gemini), and to your phone's own speech services. That
-provider's terms and prices apply. Voice input may be handled by your phone's speech
-recognizer, which can send audio to its maker. If you connect a computer over MCP, the
-connection is local-network only, as designed upstream.
-
-Your key stays on your phone. You can remove it in Settings.
+Network traffic
+Roxxy has no developer-run backend of its own, but it does use the network:
+- Your AI provider: what a task needs (your request, on-screen text, screenshots,
+  voice in live mode) is sent from your phone to the provider you configure with your
+  own key. Their terms and prices apply.
+- Web search and page fetch for tasks that need it: DuckDuckGo/Bing pages, or Tavily
+  if you add a Tavily key.
+- Voice model downloads from Hugging Face, if you choose the on-device voice.
+- Your phone's own speech recognizer, which may send audio to its maker.
+- If you connect a computer over MCP, the connection is intended to stay on your
+  local network.
+Your API keys are stored on the phone. You can remove them in Settings. Anything not
+listed here is upstream behavior that has not been fully audited in this fork.
 """.trim()
 
     val TERMS = """
 Roxxy - Terms
 Roxxy is a modified fork of AURA by Dinesh Kumar C, under the GNU AGPL v3. The full
 license and the additional permission for Google libraries are in the source
-repository. Complete corresponding source: $PRIVACY_URL
+repository you got this APK from, which also holds the complete corresponding source.
 
 Use
 Use Roxxy only on your own device and accounts, and only for lawful purposes. Do not
@@ -64,9 +65,6 @@ Accessibility permission only if you accept this.
 No warranty
 Roxxy is provided "AS IS", without warranty of any kind, as the AGPL says. You use it
 at your own risk.
-
-Contact
-$CONTACT_EMAIL.
 """.trim()
 
     /** library name -> license. Seeded with the app's key dependencies. */

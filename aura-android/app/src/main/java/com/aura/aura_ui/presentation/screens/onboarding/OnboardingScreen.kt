@@ -819,7 +819,7 @@ private fun HowAuraWorksStep(
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "I agree to the Privacy Policy & Terms of Service.",
+                        text = "I agree to the Privacy and Terms (also in Settings).",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                         color = scheme.textPrimary,
                     )
@@ -829,14 +829,12 @@ private fun HowAuraWorksStep(
                             text = "Privacy Policy",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = scheme.textPrimary,
-                            modifier = Modifier.clickable { uriHandler.openUri(com.aura.aura_ui.presentation.screens.legal.LegalCopy.PRIVACY_URL) },
                         )
                         Text("  ·  ", style = MaterialTheme.typography.labelSmall, color = scheme.textSecondary)
                         Text(
                             text = "Terms of Service",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = scheme.textPrimary,
-                            modifier = Modifier.clickable { uriHandler.openUri(com.aura.aura_ui.presentation.screens.legal.LegalCopy.TERMS_URL) },
                         )
                     }
                 }
