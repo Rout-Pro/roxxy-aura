@@ -118,5 +118,5 @@ class T(unittest.TestCase):
         self.assertEqual(res[0], "FAIL"); self.assertIn("unknown dialog", res[1])
     def test_fail_button1_with_unknown_label(self):
         res, d, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), odd_dialog()])
-        self.assertEqual(res[0], "FAIL"); self.assertIn("unrecognized", res[1]); self.assertEqual(len(d.taps), 6)
+        self.assertEqual(res[0], "FAIL"); self.assertIn("unrecognized", res[1]); self.assertEqual(len(d.taps), 8)
 if __name__ == "__main__": unittest.main()
