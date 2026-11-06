@@ -1,0 +1,173 @@
+<!doctype html>
+<!--
+  "How AURA works": the README architecture diagram, in the website's style.
+  - Served at /architecture. Render: see design/README.md. Output: .github/readme/architecture.png (2x).
+  - Edit NODES / EDGES below; positions are CSS px on a fixed 1080 x 780 canvas.
+  - Change together: README.md "How it works" steps describe the same boxes and arrows.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How AURA works · AURA</title>
+<meta name="description" content="How AURA works: from your voice to a tap on your Android phone, and from your laptop to the same tools.">
+<meta property="og:image" content="https://aura-android-use.vercel.app/og.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@500..900&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0C0F; --ink2: #4C5058; --red: #FF2B1C;
+    --line: rgba(11,12,15,.15); --chip: rgba(11,12,15,.055);
+    --card: #F4F5F7; --bg: #FFFFFF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: var(--bg); }
+  body { width: 1080px; height: 780px; position: relative; overflow: hidden; margin: 0 auto;
+         font-family: Geist, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  svg.wires { position: absolute; inset: 0; width: 1080px; height: 780px; overflow: visible; }
+
+  .title { position: absolute; left: 40px; top: 36px; }
+  .title h1 { font-family: Doto, monospace; font-weight: 900; font-size: 46px; line-height: 1; letter-spacing: -.01em; }
+  .title p { font-family: 'Geist Mono', monospace; font-size: 14px; color: var(--ink2); margin-top: 12px; }
+
+  .region-chip { position: absolute; font-family: 'Geist Mono', monospace; font-size: 11.5px; font-weight: 500;
+                 letter-spacing: .07em; text-transform: uppercase; color: var(--ink2); background: var(--bg);
+                 padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; display: flex; gap: 6px; align-items: center; }
+  .region-chip img { width: 13px; height: 13px; }
+
+  .card { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+          padding: 13px 14px; box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 14px 30px -22px rgba(11,12,15,.45); }
+  .card.cloud { background: var(--bg); border-style: dashed; border-color: rgba(11,12,15,.28); }
+  .card.person { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .card.person .sub { color: #B9BDC4; } .card.person .ic { background: rgba(255,255,255,.12); } .card.person .ic img { filter: invert(1); }
+  .card.gate { border-color: rgba(255,43,28,.45); }
+  .head { display: flex; align-items: center; gap: 10px; }
+  .ic { width: 32px; height: 32px; border-radius: 10px; background: var(--chip); display: grid; place-items: center; flex: none; }
+  .ic img { width: 18px; height: 18px; }
+  .ic img.brand { width: 19px; height: 19px; }
+  .name { font-size: 18px; font-weight: 600; letter-spacing: -.01em; line-height: 1.1; }
+  .sub { font-family: 'Geist Mono', monospace; font-size: 13px; color: var(--ink2); margin-top: 8px; line-height: 1.35; }
+  .logos { display: flex; gap: 7px; align-items: center; margin-top: 8px; font-family: 'Geist Mono', monospace; font-size: 12px; color: var(--ink2); }
+  .logos img { width: 17px; height: 17px; }
+
+  .group { position: absolute; border: 1px solid var(--line); border-radius: 20px; background: rgba(11,12,15,.025); }
+  .group .label { position: absolute; top: 9px; left: 0; right: 0; text-align: center; font-family: 'Geist Mono', monospace;
+                  font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink2); }
+
+  .elabel { position: absolute; font-family: 'Geist Mono', monospace; font-size: 12.5px; color: var(--ink2);
+            background: var(--bg); padding: 1px 5px; border-radius: 6px; white-space: nowrap; line-height: 1.3; }
+  .elabel.red { color: var(--red); }
+  .elabel.onphone { background: #FBFBFC; }
+
+  .legend { position: absolute; left: 40px; top: 742px; display: flex; gap: 26px; font-family: 'Geist Mono', monospace;
+            font-size: 12px; color: var(--ink2); align-items: center; }
+  .legend span { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+<svg class="wires" id="wires" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0B0C0F"/></marker>
+    <marker id="a-ink2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4C5058"/></marker>
+    <marker id="a-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#FF2B1C"/></marker>
+  </defs>
+  <!-- regions -->
+  <rect x="838" y="24" width="214" height="288" rx="22" fill="none" stroke="rgba(11,12,15,.28)" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <rect x="24" y="180" width="762" height="132" rx="22" fill="none" stroke="rgba(11,12,15,.28)" stroke-width="1.5" stroke-dasharray="5 6"/>
+  <path d="M46,352 H1030 A22,22 0 0 1 1052,374 V694 A22,22 0 0 1 1030,716 H316 A22,22 0 0 1 294,694 V556 A22,22 0 0 0 272,534 H46 A22,22 0 0 1 24,512 V374 A22,22 0 0 1 46,352 Z"
+        fill="#FBFBFC" stroke="rgba(11,12,15,.22)" stroke-width="1.5"/>
+</svg>
+
+<div class="title">
+  <h1>How AURA works</h1>
+  <p>From your voice to a tap, and from your laptop to the same tools.</p>
+</div>
+
+<div class="region-chip" style="left:856px;top:12px">Your computer · optional</div>
+<div class="region-chip" style="left:44px;top:170px">Cloud · your own API keys</div>
+<div class="region-chip" style="left:330px;top:705px"><img src="logos/android.svg" alt="">Your phone · the AURA app</div>
+
+<div class="group" style="left:40px;top:380px;width:460px;height:132px"><div class="label">Two ways to talk</div></div>
+
+<div id="nodes"></div>
+<div id="labels"></div>
+
+<div class="legend">
+  <span><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#0B0C0F" stroke-width="2"/></svg>main path</span>
+  <span><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#4C5058" stroke-width="1.6" stroke-dasharray="5 5"/></svg>encrypted, same network only</span>
+  <span><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="#FF2B1C" stroke-width="2"/></svg>the tap on your screen</span>
+</div>
+
+<script>
+// Fit narrow screens; at 1080px and wider (and when rendering the README image) this is a no-op.
+if (innerWidth < 1080) document.body.style.zoom = innerWidth / 1080;
+const L = 'logos/', I = 'icons/';
+// [id, x, y, w, h, kind, icon, name, sub, logos[], extraText]
+const NODES = [
+  ['clients', 850, 36, 190, 104, '', I + 'laptop.svg', 'MCP clients', 'Claude Code, Cursor…', [L + 'claude.svg', L + 'cursor.svg', L + 'vscode.svg']],
+  ['bridge', 850, 196, 190, 100, '', L + 'npm.svg', 'aura-mcp-connect', 'local daemon :4816'],
+  ['live', 40, 196, 190, 100, 'cloud', L + 'gemini.svg', 'Gemini Live', 'real-time voice'],
+  ['whisper', 310, 196, 190, 100, 'cloud', I + 'audio-waveform.svg', 'Groq Whisper', 'speech to text'],
+  ['llm', 580, 196, 190, 100, 'cloud', I + 'sparkles.svg', 'Your LLM', null, [L + 'gemini.svg', L + 'anthropic.svg', L + 'mistral.svg'], '+10 more'],
+  ['talk', 50, 414, 200, 86, '', I + 'audio-lines.svg', 'Conversation', 'Gemini Live mode'],
+  ['cmd', 290, 414, 200, 86, '', I + 'mic.svg', 'Voice commands', '“Wake up AURA”'],
+  ['agent', 580, 380, 180, 132, '', I + 'brain-circuit.svg', 'AURA agent', 'looks, acts, checks', [L + 'kotlin.svg'], 'Koog, on the phone'],
+  ['tools', 860, 380, 180, 132, '', I + 'blocks.svg', 'MCP server', '45 tools, inside the app'],
+  ['you', 40, 596, 190, 100, 'person', I + 'user.svg', 'You', 'talk or type'],
+  ['apps', 310, 596, 180, 100, '', I + 'layout-grid.svg', 'Your apps', null, [L + 'whatsapp.svg', L + 'maps.svg', L + 'spotify.svg', L + 'youtube.svg']],
+  ['device', 590, 596, 180, 100, '', I + 'scan-eye.svg', 'Accessibility', 'screen tree + vision'],
+  ['gate', 850, 596, 190, 100, 'gate', I + 'shield-check.svg', 'Safety gate', 'banking, PINs blocked'],
+];
+// [points, style, both-ways, label, labelX, labelY, labelAlign]
+//  style: main (ink, solid) | side (ink2, solid) | lan (ink2, dashed) | tap (red)
+const EDGES = [
+  [[[135, 596], [135, 514]], 'main', false, 'talk or type', 145, 544, 'left'],
+  [[[150, 414], [150, 298]], 'side', true, 'live audio', 160, 322, 'left'],
+  [[[390, 414], [390, 298]], 'side', true, 'speech ⇄ text', 380, 322, 'right'],
+  [[[500, 446], [578, 446]], 'main', false, 'request', 539, 424, 'center'],
+  [[[675, 380], [675, 298]], 'side', true, 'goal + screen ⇄ next step', 665, 322, 'right'],
+  [[[760, 446], [858, 446]], 'main', false, 'tool calls', 810, 424, 'center'],
+  [[[945, 140], [945, 194]], 'side', false, 'MCP · HTTP', 935, 158, 'right'],
+  [[[945, 296], [945, 378]], 'lan', false, 'WebRTC · LAN', 935, 322, 'right'],
+  [[[945, 512], [945, 594]], 'main', false, 'every call', 935, 544, 'right'],
+  [[[850, 646], [772, 646]], 'main', false, 'allowed', 811, 624, 'center'],
+  [[[590, 646], [492, 646]], 'tap', false, 'tap · type', 541, 624, 'center'],
+];
+
+const nodes = document.getElementById('nodes');
+for (const [id, x, y, w, h, kind, icon, name, sub, logos, extra] of NODES) {
+  const el = document.createElement('div');
+  el.className = 'card ' + kind; el.id = id;
+  Object.assign(el.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+  const brand = icon.includes('/logos/') ? ' class="brand"' : '';
+  el.innerHTML = `<div class="head"><div class="ic"><img${brand} src="${icon}" alt=""></div><div class="name">${name}</div></div>`
+    + (sub ? `<div class="sub">${sub}</div>` : '')
+    + (logos ? `<div class="logos">${logos.map(s => `<img src="${s}" alt="">`).join('')}${extra && !sub ? `<span>${extra}</span>` : ''}</div>` : '')
+    + (extra && sub ? `<div class="sub" style="margin-top:4px">${extra}</div>` : '');
+  nodes.appendChild(el);
+}
+
+const wires = document.getElementById('wires'), labels = document.getElementById('labels');
+const STYLE = { main: ['#0B0C0F', 2, '', 'a-ink'], side: ['#4C5058', 1.6, '', 'a-ink2'], lan: ['#4C5058', 1.6, '5 5', 'a-ink2'], tap: ['#FF2B1C', 2, '', 'a-red'] };
+for (const [pts, style, both, text, lx, ly, align] of EDGES) {
+  const [color, width, dash, marker] = STYLE[style];
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', 'M' + pts.map(q => q.join(',')).join(' L'));
+  Object.entries({ fill: 'none', stroke: color, 'stroke-width': width, 'stroke-dasharray': dash, 'marker-end': `url(#${marker})` })
+    .forEach(([k, v]) => v && p.setAttribute(k, v));
+  if (both) p.setAttribute('marker-start', `url(#${marker})`);
+  wires.appendChild(p);
+  const t = document.createElement('div');
+  t.className = 'elabel' + (style === 'tap' ? ' red' : '') + (ly > 352 && lx > 24 ? ' onphone' : '');
+  t.textContent = text;
+  t.style.top = (ly - 9) + 'px';
+  if (align === 'left') t.style.left = lx + 'px';
+  else if (align === 'right') t.style.right = (1080 - lx) + 'px';
+  else { t.style.left = lx + 'px'; t.style.transform = 'translateX(-50%)'; }
+  labels.appendChild(t);
+}
+</script>
+</body>
+</html>

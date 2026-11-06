@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. Pairing tokens stay on this device: change together with
+     AppTrustedClients and backup_rules.xml. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="aura_mcp_trust.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="aura_mcp_trust.xml" />
+    </device-transfer>
+</data-extraction-rules>

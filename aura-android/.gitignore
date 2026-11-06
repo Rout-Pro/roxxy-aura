@@ -1,0 +1,13 @@
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+/captures/
+*.iml
+local.properties
+
+# Vendored sherpa-onnx wake-word AAR (28 MB) — fetched from its pinned GitHub
+# release by the config-time guard in app/build.gradle.kts. Kept out of git
+# history on purpose (large binary). The 5 MB int8 KWS model under
+# app/src/main/assets/kws/ IS committed — it is product runtime data.
+/app/libs/*.aar
