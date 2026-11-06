@@ -34,13 +34,9 @@ for i in range(1,13):
     for w in want:
         m=re.search(r'text="%s"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"'%re.escape(w),x)
         if m: tgt=m;break
-    if i>1 and prev==texts[:8] and not done_cb:
-        # stuck: tap the policy checkbox (narrow clickable in the lower half), else the first clickable
-        cands=[tuple(map(int,mm.groups())) for mm in re.finditer(r'clickable="true"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',x)]
-        cands=[c for c in cands if c[2]-c[0]<120 and c[1]>300]
-        if cands:
-            a,b,c,d=cands[0]; sh("adb shell input tap %d %d"%((a+c)//2,(b+d)//2)); time.sleep(3); prev=texts[:8]; done_cb=True; continue
     prev=texts[:8]
+    if 'package="com.roxxy.aura"' not in x:
+        print('left app (system screen), stopping walk'); break
     if not tgt: break
     a,b,c,d=map(int,tgt.groups()); sh("adb shell input tap %d %d"%((a+c)//2,(b+d)//2)); time.sleep(4)
 PY
