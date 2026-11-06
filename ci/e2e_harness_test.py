@@ -4,6 +4,8 @@ is explicitly SYNTHETIC (permission/Settings stages have not been seen on a devi
 import json, os, shutil, subprocess, tempfile, unittest
 HERE = os.path.dirname(os.path.abspath(__file__)); FIX = os.path.join(HERE, "fixtures")
 APP, SET, PC = "com.roxxy.aura", "com.android.settings", "com.google.android.permissioncontroller"
+APPF = "com.roxxy.aura/com.roxxy.aura.MainActivity"; SETF = "com.android.settings/com.android.settings.Settings$AccessibilitySettingsActivity"
+PCF = "com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity"
 
 def screen(pkg, items):
     rows = []
@@ -39,15 +41,15 @@ def graph(**over):
      "acc": {"xml": "acc.xml", "trans": {"CHECK": "list"}},
      "list": {"xml": "settings_list_real.xml", "trans": {"Roxxy": "service"}},
      "service": {"xml": "service_page_real.xml", "trans": {"Use Roxxy": "dialog"}},
-     "dialog": {"xml": "accessibility_dialog_real.xml", "trans": {"Allow": "service_on"}},
-     "service_on": {"xml": "service_on.xml", "trans": {"BACK": "list_on"}},
-     "list_on": {"xml": "settings_list_real.xml", "trans": {"BACK": "s5"}},
-     "s5": {"xml": "step5_real.xml", "trans": {"CHECK": "mic", "Skip for now": "s6"}},
-     "mic": {"xml": "mic.xml", "trans": {"Don\u2019t allow": "s5b"}},
-     "s5b": {"xml": "step5_real.xml", "trans": {"Skip for now": "s6"}},
-     "s6": {"xml": "s6.xml", "trans": {"Skip for now": "s7"}},
-     "s7": {"xml": "s7.xml", "trans": {"Skip for now": "key"}},
-     "key": {"xml": "key.xml", "trans": {}},
+     "dialog": {"xml": "accessibility_dialog_real.xml", "trans": {"Allow": "post_allow"}},
+     # --- after consent the walker uses screenshots only; focus/png/taps describe the scripted device ---
+     "post_allow": {"xml": "service_page_real.xml", "focus": SETF, "trans": {"BACK": "s5"}},
+     "s5": {"xml": "step5_real.xml", "png": "step5_real.png", "focus": APPF, "taps": [[20, 74, 300, 140, "mic"], [121, 609, 199, 625, "s6"]]},
+     "mic": {"xml": "step5_real.xml", "png": "synth_mic_dialog.png", "focus": PCF, "taps": [[60, 445, 260, 475, "s5b"]]},
+     "s5b": {"xml": "step5_real.xml", "png": "step5_real.png", "focus": APPF, "taps": [[121, 609, 199, 625, "s6"]]},
+     "s6": {"xml": "step5_real.xml", "png": "synth_step6.png", "focus": APPF, "taps": [[100, 600, 220, 635, "s7"]]},
+     "s7": {"xml": "step5_real.xml", "png": "synth_step7.png", "focus": APPF, "taps": [[100, 600, 220, 635, "key"]]},
+     "key": {"xml": "step5_real.xml", "png": "synth_key.png", "focus": APPF, "taps": []},
     }
     g = {"start": "landing", "states": st}; g.update(over); return g
 
@@ -72,26 +74,47 @@ class E2E(unittest.TestCase):
     def test_success_path_exits_zero_with_artifacts(self):
         p, out, log = self.run_harness(graph())
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("RESULT: STOP - optional steps skipped; reached key step", log)
+        self.assertIn("RESULT: STOP - optional steps skipped via screenshot-grounded taps; reached key gate", log)
         self.assertIn("button before tick: 'Accept Terms' enabled=false", log); self.assertIn("button after tick: 'I Understand' enabled=true", log)
         self.assertIn("confirm dialog context=", log); self.assertIn("harness exit code: 0", p.stdout)
-        for f in ("walk_1_landing.xml", "walk_3_agreement_checked.png", "walk_a1_settings_list.xml", "walk_a4_after_confirm.xml", "walk_b2_mic_denied.xml", "walk_b5_after_skip.xml", "pid_after.txt", "errors_after_walk.txt", "logcat.txt", "shot_10.png", "ui_25.xml"):
+        for f in ("walk_1_landing.xml", "walk_3_agreement_checked.png", "walk_a1_settings_list.xml", "shot_c0_step5.png", "shot_c1_mic_prompt.png", "shot_c2_mic_refused.png", "shot_c3_step_8_key_gate.png", "pid_after.txt", "errors_after_walk.txt", "logcat.txt", "shot_10.png", "ui_25.xml"):
             self.assertTrue(os.path.exists(os.path.join(out, f)), f)
     def test_unknown_dialog_fails_nonzero_and_keeps_evidence(self):
         g = graph(); g["states"]["service"]["trans"]["Use Roxxy"] = "dialog_other"; g["states"]["dialog_other"] = {"xml": "dialog_other.xml", "trans": {"Allow": "service_on"}}
         p, out, log = self.run_harness(g)
         self.assertNotEqual(p.returncode, 0); self.assertIn("RESULT: FAIL - unknown dialog", log)
         self.assertTrue(os.path.exists(os.path.join(out, "walk_a3_after_toggle.png")))
-    def test_stale_dump_is_rejected_and_fails_clearly(self):
-        # the dump fails once in service_on; the previous state's dump must NOT be reused
-        p, out, log = self.run_harness(graph(dump_fails_in=["service_on"]))
-        x = os.path.join(out, "walk_a4_after_confirm.xml")
-        self.assertFalse(os.path.exists(x) and "Allow Roxxy full control" in open(x).read())
-        self.assertIn("RESULT: FAIL - UI dump unavailable at a4_after_confirm", log)  # clear failure, no stale reuse
-        self.assertNotEqual(p.returncode, 0)
-    def test_persistent_dump_failure_fails(self):
-        p, out, log = self.run_harness(graph(dump_fails_in=["service_on", "s5"]))
-        self.assertNotEqual(p.returncode, 0); self.assertIn("RESULT: FAIL", log)
+    def test_dump_failure_before_consent_still_explicit(self):
+        p, out, log = self.run_harness(graph(dump_fails_in=["dialog"]))
+        self.assertIn("RESULT: FAIL - UI dump unavailable at a3_after_toggle", log); self.assertNotEqual(p.returncode, 0)
+    def test_post_consent_never_uses_dumps(self):
+        # every dump after consent would fail: the screenshot driver must not care and must not call uiautomator
+        p, out, log = self.run_harness(graph(dump_fails_in=["post_allow", "s5", "mic", "s5b", "s6", "s7", "key"]))
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr); self.assertIn("RESULT: STOP", log)
+    def _fail(self, mod, expect, taps_log=None):
+        g = graph(); mod(g["states"])
+        p, out, log = self.run_harness(g)
+        self.assertNotEqual(p.returncode, 0, p.stdout); self.assertIn("RESULT: FAIL - screenshot driver stopped", log); self.assertIn(expect, log)
+        self.assertIn("harness exit code: 1", p.stdout); return p, out, log
+    def test_wrong_foreground_at_mic_dialog_propagates(self):
+        self._fail(lambda s: s["mic"].update(focus=SETF), "expected perm")
+    def test_other_permission_dialog_never_tapped(self):
+        p, out, log = self._fail(lambda s: s["mic"].update(png="synth_other_perm_dialog.png"), "matched 0 times")
+        self.assertNotIn("tap 'dont allow'", log)
+    def test_capture_failure_propagates(self):
+        self._fail(lambda s: s["s6"].update(shot_empty=True), "screenshot capture failed")
+    def test_stale_capture_propagates(self):
+        g = graph(stale_in=["s6"]); p, out, log = self.run_harness(g)
+        self.assertNotEqual(p.returncode, 0); self.assertIn("unchanged after tap", log)
+    def test_duplicate_target_propagates(self):
+        self._fail(lambda s: s["s5"].update(png="synth_dup_skip.png"), "matched 2 times")
+    def test_unrelated_screen_with_matching_words_propagates(self):
+        self._fail(lambda s: s["s5"].update(png="synth_notes_app.png"), "matched 0 times")
+    def test_low_confidence_screen_propagates(self):
+        self._fail(lambda s: s["s6"].update(png="synth_step6_blur.png"), "matched 0 times")
+    def test_taps_are_logged_with_their_source_screenshot(self):
+        p, out, log = self.run_harness(graph())
+        self.assertIn("tap 'microphone access' at (", log); self.assertIn("from shot_c0_step5.png", log)
     def test_walker_exception_stderr_captured_and_nonzero(self):
         p, out, log = self.run_harness(graph(wm_size="garbage"))
         self.assertNotEqual(p.returncode, 0); self.assertIn("Traceback", log)

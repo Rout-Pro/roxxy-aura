@@ -162,7 +162,6 @@ def _run(dev, log):
             return "FAIL", "unknown dialog (no Roxxy consent context); not approving"
         log("confirm dialog context=%r button=%r" % (ctx[0], allow.get("text")))
         dev.tap(allow if allow.get("clickable") == "true" else (clickable_for(r, allow.get("text")) or allow))
-        r = dev.dump("a4_after_confirm")
     elif any(n.get("resource-id") == "android:id/button1" for n in r.iter("node")):
         return "FAIL", "dialog with unrecognized affirmative label; not approving"
     else:
@@ -170,40 +169,6 @@ def _run(dev, log):
         c3 = [c for c in checkables(r) if row3 is not None and contains(row3, c)]
         if in_app(r) or not c3 or c3[0].get("checked") != "true":
             return "FAIL", "toggle neither showed a confirm dialog nor turned on (OS blocked or unknown dialog)"
-    for j in range(3):
-        if in_app(r):
-            break
-        dev.back()
-        r = dev.dump("a5_back_%d" % j)
-    if not in_app(r):
-        return "FAIL", "could not return to app after enabling Accessibility via Settings UI"
-    t = texts(r)  # the in-app dump taken after BACK is already stage 5 (real run 42242507187)
-    log("after grant %s" % t[:6])
-    if find_text(r, "Skip for now") is None:
-        return "FAIL", "stage 5 (optional voice/overlay) with Skip not reached after accessibility grant"
-    # Stage 5: refuse the runtime mic dialog once, expect to stay in app, then skip.
-    sw5 = checkables(r)
-    if sw5:
-        dev.tap(sw5[0])
-        r = dev.dump("b1_mic_prompt")
-        deny = find_text(r, "Don\u2019t allow", "Don't allow", "Deny")
-        if deny is not None:
-            dev.tap(clickable_for(r, deny.get("text")))
-            r = dev.dump("b2_mic_denied")
-        if not in_app(r):
-            return "FAIL", "left app during mic refusal"
-        if find_text(r, "Skip for now") is None:
-            return "FAIL", "Skip not available after refusing mic"
-    for n_stage, k in ((5, "b3"), (6, "b4"), (7, "b5")):
-        sk = find_text(r, "Skip for now")
-        if sk is None:
-            return "FAIL", "Skip for now missing at optional stage %d" % n_stage
-        log("skipping optional stage %d: %s" % (n_stage, [x for x in texts(r) if "stay off" in x or "cannot" in x]))
-        dev.tap(clickable_for(r, "Skip for now"))
-        r = dev.dump("%s_after_skip" % k)
-        if not in_app(r):
-            return "FAIL", "left app after skip"
-    t = texts(r)
-    if any(m in t for m in KEY_MARKERS):
-        return "STOP", "optional steps skipped; reached key step (nothing entered)"
-    return "FAIL", "key step not reached after skipping optional steps: %s" % t[:6]
+    # Everything after consent is screenshot-grounded (uiautomator dumps were unreliable once the
+    # Roxxy accessibility service was on). See shot_lib.py.
+    return dev.after_consent(log)

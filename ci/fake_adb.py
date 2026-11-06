@@ -50,9 +50,25 @@ elif a[0] == "pull":
     p = os.path.join(dev, os.path.basename(a[1]))
     if not os.path.exists(p): print("adb: error: remote object does not exist", file=sys.stderr); sys.exit(1)
     shutil.copy(p, a[2])
-elif a[:2] == ["exec-out", "screencap"]: sys.stdout.buffer.write(b"\x89PNG-fake-" + st["state"].encode())
+elif a[:2] == ["exec-out", "screencap"]:
+    cur = G["states"][st["state"]]
+    if cur.get("shot_empty"): pass
+    elif st["state"] in G.get("stale_in", []) and st.get("last_png"):
+        sys.stdout.buffer.write(open(st["last_png"], "rb").read())
+    elif cur.get("png"):
+        p = os.path.join(D, cur["png"]); st["last_png"] = p; save(); sys.stdout.buffer.write(open(p, "rb").read())
+    else: sys.stdout.buffer.write(b"\x89PNG-fake-" + st["state"].encode())
+elif a[:2] == ["shell", "dumpsys"]:
+    f = G["states"][st["state"]].get("focus")
+    print("  mCurrentFocus=Window{1a2b u0 %s}" % f if f else "  mCurrentFocus=null")
 elif a[:3] == ["shell", "input", "tap"]:
-    k = key_at(int(a[3]), int(a[4])); go(k) if k else None
+    cur = G["states"][st["state"]]
+    if "taps" in cur:  # screenshot-driven states: tap boxes instead of dump nodes
+        x, y = int(a[3]), int(a[4])
+        for x1, y1, x2, y2, to in cur["taps"]:
+            if x1 <= x <= x2 and y1 <= y <= y2: st["state"] = to; save(); break
+    else:
+        k = key_at(int(a[3]), int(a[4])); go(k) if k else None
 elif a[:3] == ["shell", "input", "keyevent"]: go("BACK")
 elif a[:3] == ["shell", "input", "swipe"]: go("SWIPE")
 else: print("fake adb: unhandled " + " ".join(a), file=sys.stderr); sys.exit(2)

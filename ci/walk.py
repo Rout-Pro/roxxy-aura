@@ -2,6 +2,7 @@ import subprocess, time, sys, os
 import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.dirname(__file__))
 import walk_lib as W
+import shot_lib
 
 def sh(c): return subprocess.run(c, shell=True, capture_output=True, text=True).stdout
 
@@ -30,6 +31,15 @@ class Adb:
     def tap(self, nd):
         a, b, c, d = W.box(nd); sh("adb shell input tap %d %d" % ((a + c) // 2, (b + d) // 2)); time.sleep(3)
     def sleep(self, n): time.sleep(n)
+    def focus(self):
+        return shot_lib.parse_focus(sh("adb shell dumpsys window | grep mCurrentFocus"))
+    def shot(self, name):
+        """Fresh capture: local copy removed first; returns the path or None if nothing was written."""
+        p = "out/shot_%s.png" % name
+        sh("rm -f %s; adb exec-out screencap -p > %s" % (p, p))
+        return p if os.path.exists(p) and os.path.getsize(p) > 0 else None
+    def tap_xy(self, x, y): sh("adb shell input tap %d %d" % (x, y)); time.sleep(3)
+    def after_consent(self, log): return shot_lib.run_after_consent(self, log)
     def back(self): sh("adb shell input keyevent KEYCODE_BACK"); time.sleep(2)
     def scroll_down(self):
         h = self.screen_h; sh("adb shell input swipe 160 %d 160 %d 300" % (int(h * .7), int(h * .3))); time.sleep(1)

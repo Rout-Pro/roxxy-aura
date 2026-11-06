@@ -30,12 +30,13 @@ def plain_stage(): return screen(node(text="Roxxy Virtual Keyboard"), node(click
 
 class Dev:
     """Scripted device: dumps come from a queue keyed by action sequence."""
-    def __init__(self, seq, screen_h=640): self.seq = list(seq); self.screen_h = screen_h; self.taps = []; self.backs = 0; self.scrolls = 0; self.names = []
+    def __init__(self, seq, screen_h=640): self.seq = list(seq); self.screen_h = screen_h; self.handed_off = False; self.taps = []; self.backs = 0; self.scrolls = 0; self.names = []
     def dump(self, name): self.names.append(name); return self.seq.pop(0)
     def tap(self, nd): self.taps.append(nd.get("bounds"))
     def back(self): self.backs += 1
     def scroll_down(self): self.scrolls += 1
     def sleep(self, n): pass
+    def after_consent(self, log): self.handed_off = True; return ("STOP", "handed to screenshot driver")
 
 def go(seq, **kw):
     d = Dev(seq, **kw); logs = []
@@ -79,31 +80,17 @@ class T(unittest.TestCase):
             if n.get("clickable") == "true" and n.get("bounds") == "[70,574][250,626]": n.set("enabled", "false")
         self.assertEqual(go([load("landing"), load("policy_unchecked"), r])[0], ("FAIL", "button still disabled after tick"))
     def full(self, **over):
-        seq = self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), dialog(), settings_list(), skip_screen(), mic_dialog(), skip_screen(), plain_stage(), plain_stage(), key_screen()]
+        seq = self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), dialog()]
         return seq
     def test_full_revised_path(self):
         res, d, logs = go(self.full())
-        self.assertEqual(res[0], "STOP"); self.assertIn("key step", res[1]); self.assertEqual(d.backs, 1)
+        self.assertEqual(res, ("STOP", "handed to screenshot driver")); self.assertTrue(d.handed_off); self.assertEqual(d.backs, 0)
+        self.assertEqual(d.names[-1], "a3_after_toggle")  # no dump is taken after the consent tap
     def test_accessibility_gate_must_not_be_skippable(self):
         res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), skip_screen()])
         self.assertEqual(res, ("FAIL", "accessibility gate must not be skippable"))
     def test_fail_settings_list_without_roxxy(self):
         res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), SYSTEM()]); self.assertEqual(res[0], "FAIL")
-    def test_fail_never_returns_to_app(self):
-        res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), dialog(), SYSTEM(), SYSTEM(), SYSTEM(), SYSTEM()])
-        self.assertEqual(res[0], "FAIL"); self.assertIn("could not return", res[1])
-    def test_fail_no_skip_after_grant(self):
-        seq = self.full(); seq[10] = perm_screen()  # in-app dump lacks Skip
-        res, _, _ = go(seq[:11]); self.assertEqual(res[0], "FAIL"); self.assertIn("Skip", res[1])
-    def test_fail_skip_missing_later_stage(self):
-        seq = self.full(); seq[14] = screen(node(text="Notifications"))
-        res, _, _ = go(seq); self.assertEqual(res[0], "FAIL")
-    def test_fail_left_app_during_mic_refusal(self):
-        seq = self.full(); seq[12] = SYSTEM()
-        res, _, _ = go(seq[:13]); self.assertEqual(res, ("FAIL", "left app during mic refusal"))
-    def test_fail_key_step_not_reached(self):
-        seq = self.full(); seq[-1] = plain_stage()
-        res, _, _ = go(seq); self.assertEqual(res[0], "FAIL")
     def test_real_service_page_dump_selects_use_roxxy_row(self):
         r = load("service_page_real")
         self.assertEqual(len(W.checkables(r)), 2)  # the ambiguity that stopped the 20:37 run
