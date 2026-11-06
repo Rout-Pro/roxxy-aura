@@ -19,6 +19,6 @@ echo "--- errors:"; cat out/errors.txt
 echo "--- ui text:"; grep -o 'text="[^"]\+"' out/ui_25.xml | head -30
 
 # ---- walk onboarding (semantic selectors from the UI dump; one bounded pass) ----
-python3 ci/walk.py | tee out/walk_log.txt
+python3 ci/walk.py 2>&1 | tee out/walk_log.txt
 adb logcat -d | grep -E "FATAL EXCEPTION|ANR in" | head -10 > out/errors_after_walk.txt; echo "--- fatal/anr after walk:"; cat out/errors_after_walk.txt
 adb shell pidof $PKG > out/pid_after.txt 2>&1; echo "pid after: $(cat out/pid_after.txt)"

@@ -119,4 +119,32 @@ class T(unittest.TestCase):
     def test_fail_button1_with_unknown_label(self):
         res, d, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), odd_dialog()])
         self.assertEqual(res[0], "FAIL"); self.assertIn("unrecognized", res[1]); self.assertEqual(len(d.taps), 8)
+class AdbAdapter(unittest.TestCase):
+    def test_dump_cmd_formats_and_removes_stale_files(self):
+        import walk
+        c = walk.dump_cmd("perm_back")
+        self.assertIn("adb shell rm -f /sdcard/w.xml", c); self.assertIn("rm -f out/walk_perm_back.xml", c)
+        self.assertIn("adb pull /sdcard/w.xml out/walk_perm_back.xml", c); self.assertNotIn("%", c)
+    def test_adapter_dump_end_to_end_with_fake_shell(self):
+        import walk, tempfile, shutil
+        d = tempfile.mkdtemp(); cwd = os.getcwd(); os.chdir(d); os.makedirs("out")
+        calls = []
+        def fake_sh(cmd):
+            calls.append(cmd)
+            if cmd.startswith("adb shell wm size"): return "Physical size: 320x640"
+            if "uiautomator dump" in cmd: shutil.copy(os.path.join(D, "landing.xml"), "out/walk_x.xml")
+            return ""
+        walk.sh = fake_sh
+        a = walk.Adb(); self.assertEqual(a.screen_h, 640)
+        r = a.dump("x"); self.assertIsNotNone(W.find_text(r, "Get Started"))
+        os.chdir(cwd); shutil.rmtree(d)
+class AdbInputs(unittest.TestCase):
+    def test_tap_back_scroll_commands(self):
+        import walk
+        calls = []
+        walk.sh = lambda c: (calls.append(c), "Physical size: 320x640")[1]
+        walk.time.sleep = lambda n: None
+        a = walk.Adb(); a.tap(node(bounds="[20,485][300,564]")); a.back(); a.scroll_down()
+        self.assertIn("adb shell input tap 160 524", calls); self.assertIn("adb shell input keyevent KEYCODE_BACK", calls)
+        self.assertTrue(any(c.startswith("adb shell input swipe 160 ") for c in calls))
 if __name__ == "__main__": unittest.main()
