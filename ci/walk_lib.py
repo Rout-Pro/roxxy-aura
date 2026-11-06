@@ -52,7 +52,25 @@ def fully_visible(nd, screen_h):
     b = box(nd)
     return b is not None and b[1] >= 0 and b[3] <= screen_h and b[3] > b[1]
 
+class DumpUnavailable(Exception):
+    pass
+
+class _Guard:
+    def __init__(self, dev): self._d = dev
+    def __getattr__(self, k): return getattr(self._d, k)
+    def dump(self, name):
+        r = self._d.dump(name)
+        if not any(True for _ in r.iter("node")):
+            raise DumpUnavailable(name)
+        return r
+
 def run(dev, log):
+    try:
+        return _run(_Guard(dev), log)
+    except DumpUnavailable as e:
+        return "FAIL", "UI dump unavailable at %s (uiautomator returned nothing)" % e
+
+def _run(dev, log):
     """dev: dump(name)->Element, tap(node), back(), scroll_down(), screen_h. Returns (status, detail)."""
     r = dev.dump("1_landing")
     log("1 landing %s" % texts(r)[:6])
@@ -159,9 +177,7 @@ def run(dev, log):
         r = dev.dump("a5_back_%d" % j)
     if not in_app(r):
         return "FAIL", "could not return to app after enabling Accessibility via Settings UI"
-    dev.sleep(2)
-    r = dev.dump("b0_after_grant")
-    t = texts(r)
+    t = texts(r)  # the in-app dump taken after BACK is already stage 5 (real run 42242507187)
     log("after grant %s" % t[:6])
     if find_text(r, "Skip for now") is None:
         return "FAIL", "stage 5 (optional voice/overlay) with Skip not reached after accessibility grant"

@@ -16,7 +16,7 @@ class Adb:
         out = sh("adb shell wm size")
         self.screen_h = int(out.strip().split(":")[-1].strip().split("x")[1])
     def dump(self, name):
-        for _ in range(3):
+        for _ in range(5):
             sh(dump_cmd(name))
             try:
                 r = ET.parse("out/walk_%s.xml" % name).getroot()
