@@ -95,6 +95,30 @@ class T(unittest.TestCase):
     def test_stop_other_permission_with_deny_never_tapped(self):
         res, d, _ = run(graph(mic={"png": "synth_other_perm_deny.png"}))
         self.assertEqual(res[0], "FAIL"); self.assertEqual([t for t in d.taps if t[0] == "mic"], [])
+    def test_step7_api30_real_variant_wrapped_heading_passes(self):
+        # REAL API30 capture: "2/2: Live Alerts &" / "Listener" (wrapped); one Skip at (160,618).
+        res, d, logs = run(graph(s6={"png": "step6_api30_real.png"}, s7={"png": "step7_api30_real.png"}))
+        self.assertEqual(res[0], "STOP", res); self.assertTrue(any("variant: 2/2 Live Alerts" in l for l in logs))
+    def test_step7_api33_push_variant_still_passes(self):
+        res, d, logs = run(graph())
+        self.assertEqual(res[0], "STOP", res); self.assertTrue(any("variant: 1/2 Push" in l for l in logs))
+    def test_step7_api33_real_push_variant_passes(self):
+        res, d, logs = run(graph(s7={"png": "step7_api33_real.png"}))
+        self.assertEqual(res[0], "STOP", res); self.assertTrue(any("variant: 1/2 Push" in l for l in logs))
+    def test_step7_synthetic_wrapped_live_variant(self):
+        res, _, _ = run(graph(s7={"png": "synth_step7_live_wrapped.png"})); self.assertEqual(res[0], "STOP", res)
+    def test_step7_stops_on_duplicate_live_heading(self):
+        res, d, _ = run(graph(s7={"png": "synth_step7_live_dup.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertIn("step 7 identity ambiguous", res[1])
+    def test_step7_stops_on_listener_alone(self):
+        res, d, _ = run(graph(s7={"png": "synth_step7_listener_only.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertIn("ambiguous", res[1])
+    def test_step7_stops_when_both_variants_present(self):
+        res, d, _ = run(graph(s7={"png": "synth_step7_both.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertIn("ambiguous", res[1])
+    def test_step7_stops_on_unrelated_screen(self):
+        res, d, _ = run(graph(s7={"png": "synth_notes_app.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertIn("ambiguous", res[1])
     def test_stop_if_no_dialog_appears(self):
         res, d, _ = run(graph(s5={"taps": [(MIC_ROW, "s5")]}))
         self.assertEqual(res[0], "FAIL"); self.assertIn("foreground", res[1] + "foreground")

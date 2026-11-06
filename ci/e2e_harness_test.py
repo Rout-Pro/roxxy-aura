@@ -110,6 +110,12 @@ class E2E(unittest.TestCase):
         g = graph(); g["states"]["mic"].update(png="synth_mic_dialog_deny.png")
         p, out, log = self.run_harness(g)
         self.assertEqual(p.returncode, 0, p.stdout + log); self.assertIn("tap 'deny'", log); self.assertIn("RESULT: STOP", log)
+    def test_api30_real_step7_variant_full_entrypoint(self):
+        g = graph(); g["states"]["s6"].update(png="step6_api30_real.png"); g["states"]["s7"].update(png="step7_api30_real.png")
+        p, out, log = self.run_harness(g)
+        self.assertEqual(p.returncode, 0, p.stdout + log); self.assertIn("variant: 2/2 Live Alerts", log); self.assertIn("RESULT: STOP", log)
+    def test_step7_ambiguous_propagates(self):
+        self._fail(lambda s: s["s7"].update(png="synth_step7_both.png"), "step 7 identity ambiguous")
     def test_capture_failure_propagates(self):
         self._fail(lambda s: s["s6"].update(shot_empty=True), "screenshot capture failed")
     def test_stale_capture_propagates(self):

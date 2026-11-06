@@ -73,6 +73,20 @@ class Shots:
         if self.find(png, phrase, True):
             raise Stop("%r unexpectedly present on %s" % (phrase, os.path.basename(png)))
 
+    def step7_identity(self, png):
+        """Step 7 has two real variants (source: OnboardingScreen Step 7, AnimatedContent on notifGranted):
+        API 33+ shows "1/2: Push Notifications"; API <33 has no POST_NOTIFICATIONS runtime permission, so
+        notifGranted is true and it shows "2/2: Live Alerts & Listener" (the title wraps over two lines).
+        Exactly ONE variant must be present; the other variant's heading must be absent."""
+        push = self.find(png, "push notifications", False)
+        live = self.find(png, "live alerts", False)
+        listener = self.find(png, "listener", True)
+        if len(push) == 1 and not live and not listener:
+            self.log("step 7 variant: 1/2 Push Notifications (API 33+)"); return "push"
+        if len(live) == 1 and len(listener) == 1 and not push:
+            self.log("step 7 variant: 2/2 Live Alerts & Listener (API <33: no runtime notification permission)"); return "live"
+        raise Stop("step 7 identity ambiguous on %s (push=%d live=%d listener=%d)" % (os.path.basename(png), len(push), len(live), len(listener)))
+
     def screen(self, name, kind, must, absent=(), loose=()):
         png = self.capture(name, kind)
         for p in must:
@@ -140,7 +154,10 @@ def _run(s, dev, log):
         before = s.tap_phrase(png, "skip for now", "app")
         dev.sleep(2)
         png = s.changed(before, "c3_" + label.replace(" ", "_"), "app")
-        s.unique(png, heading)
+        if heading == "push notifications":
+            s.step7_identity(png)
+        else:
+            s.unique(png, heading)
         s.absent(png, "microphone access")
         log("reached %s (%s)" % (label, heading))
         if last:
