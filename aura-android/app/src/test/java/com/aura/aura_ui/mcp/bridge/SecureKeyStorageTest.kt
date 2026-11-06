@@ -93,8 +93,8 @@ class SecureKeyStorageTest {
 
     @Test fun `privacy text states permissions are declared not granted and keys are encrypted only`() {
         val p = com.aura.aura_ui.presentation.screens.legal.LegalCopy.PRIVACY
-        assertTrue(p.contains("Declaring one"))
-        assertTrue(p.contains("does not mean it is granted"))
+        assertTrue(p.contains("Granted at install with no prompt"))
+        assertTrue(p.contains("Android\nbackup is turned off"))
         assertTrue(p.contains("encrypted storage only"))
         assertFalse(p.contains("stored on the phone. You can"))
     }

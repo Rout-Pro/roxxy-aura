@@ -27,15 +27,17 @@ Android's Accessibility service, when you ask it to. Banking, payment and authen
 apps known to the app are blocked by its own rules. That list cannot cover every app.
 
 Permissions
-Roxxy's manifest declares more permissions than it uses at any moment. Declaring one
-does not mean it is granted: Android asks you, or you switch it on in system Settings,
-and you can refuse or revoke each one.
+Roxxy's manifest declares more permissions than it uses at any moment. Some need your
+approval (Android asks you, or you switch them on in system Settings, and you can
+revoke them). Others are "normal" permissions that Android grants automatically at
+install, with no prompt.
 - Needs your explicit setup: Accessibility service (required for Roxxy to work),
   microphone, notifications, display over other apps, battery optimisation exemption.
-- Requested only when a task uses it: contacts, camera, photos/video/audio files,
-  location, Bluetooth and Wi-Fi state, alarms, system settings and Do Not Disturb.
-- Declared without a prompt: internet, network state, vibrate, wake lock, start on
-  boot, foreground services, and the list of installed apps (used to open apps by name).
+- Asks you only when a task uses it: contacts, camera, photos/video/audio files,
+  location, Bluetooth, alarms, system settings and Do Not Disturb.
+- Granted at install with no prompt: internet, network and Wi-Fi state, vibrate, wake
+  lock, start on boot, foreground services, and seeing which apps are installed (used
+  to open apps by name; you cannot turn this one off separately).
 Roxxy cannot use contacts, camera, location or files you have not allowed.
 
 Network traffic
@@ -53,8 +55,9 @@ Roxxy has no developer-run backend of its own, but it does use the network:
 - If you connect a computer over MCP, the connection is intended to stay on your
   local network.
 Your API keys are stored on the phone in encrypted storage only. If this device cannot
-provide it, Roxxy refuses to save a key instead of storing it unencrypted. Keys are
-excluded from Android backups and device transfers. You can remove them in Settings. Anything not
+provide it, Roxxy refuses to save a key instead of storing it unencrypted. Android
+backup is turned off for Roxxy, so keys and settings are not backed up or moved to a
+new phone. You can remove them in Settings. Anything not
 listed here is upstream behavior that has not been fully audited in this fork.
 """.trim()
 
