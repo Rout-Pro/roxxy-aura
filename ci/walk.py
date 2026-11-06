@@ -43,7 +43,7 @@ r=dump("3_agreement_checked")
 cbs=[n for n in r.iter("node") if n.get("checkable")=="true"]
 print("after tap checked:",[n.get("checked") for n in cbs])
 if not cbs or cbs[0].get("checked")!="true": print("STOP: agreement did not become checked"); raise SystemExit
-b=find_text(r,"I Understand") or find_text(r,"Accept Terms"); print("button label after tick:",b.get("text") if b is not None else None)
+b=find_text(r,"I Understand"); b=b if b is not None else find_text(r,"Accept Terms"); print("button label after tick:",b.get("text") if b is not None else None)
 if b is None: print("STOP: no policy button"); raise SystemExit
 tap(clickable_for(r,b.get("text")))
 r=dump("4_after_policy"); print("4 after policy",texts(r)[:12])
