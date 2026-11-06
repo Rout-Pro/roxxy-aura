@@ -112,6 +112,19 @@ class E2E(unittest.TestCase):
         self._fail(lambda s: s["s5"].update(png="synth_notes_app.png"), "matched 0 times")
     def test_low_confidence_screen_propagates(self):
         self._fail(lambda s: s["s6"].update(png="synth_step6_blur.png"), "matched 0 times")
+    def test_abi_required_but_absent_stops_before_install(self):
+        p, out, log = self.run_harness(graph(abilist="x86_64"), extra_env={"REQUIRE_ABI": "arm64-v8a"})
+        self.assertNotEqual(p.returncode, 0); self.assertIn("required ABI arm64-v8a not in emulator", p.stdout)
+        self.assertFalse(os.path.exists(os.path.join(out, "install.txt")))
+    def test_abi_present_runs_and_records_abi_and_translation(self):
+        p, out, log = self.run_harness(graph(abilist="x86_64,x86,arm64-v8a,armeabi-v7a", primary_abi="arm64-v8a", translation_maps="12"), extra_env={"REQUIRE_ABI": "arm64-v8a"})
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("primaryCpuAbi=arm64-v8a", open(os.path.join(out, "pkg_abi.txt")).read())
+        self.assertIn("ndk_translation maps in app process: 12", p.stdout)
+        self.assertTrue(os.path.exists(os.path.join(out, "shot_c4_gate_scrolled.png")))
+    def test_install_failure_stops(self):
+        p, out, log = self.run_harness(graph(install_out="Failure [INSTALL_FAILED_NO_MATCHING_ABIS: x]"))
+        self.assertNotEqual(p.returncode, 0); self.assertIn("adb install did not succeed", p.stdout)
     def test_taps_are_logged_with_their_source_screenshot(self):
         p, out, log = self.run_harness(graph())
         self.assertIn("tap 'microphone access' at (", log); self.assertIn("from shot_c0_step5.png", log)

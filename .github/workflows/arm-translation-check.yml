@@ -1,0 +1,56 @@
+name: ARM translation check (exact shipped candidate, API 30 google_apis x86_64)
+# Installs the EXACT candidate APK from a previous Build run (hash-checked) on an emulator image that
+# advertises arm64-v8a through Google's ARM translation. This is translation evidence, not ARM hardware.
+on: workflow_dispatch
+permissions:
+  contents: read
+  actions: read
+env:
+  SOURCE_RUN: "42251525189"
+  EXPECT_SHA256: "69f58bd44048eb72e160b6b1dd87e2b231f9b4ac3c5ac97b2fc439149a24f2a9"
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the exact candidate from the Build run and verify its hash
+        uses: actions/download-artifact@v4
+        with:
+          name: roxxy-apk
+          run-id: ${{ env.SOURCE_RUN }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          path: candidate
+      - name: Verify hash (stop on mismatch)
+        run: |
+          ls -l candidate
+          echo "$EXPECT_SHA256  candidate/app-release.apk" | sha256sum -c -
+      - name: OCR tools (tesseract + Pillow)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
+          python3 -c "import PIL" 2>/dev/null || python3 -m pip install --quiet pillow
+      - name: Walker tests (no emulator)
+        run: |
+          python3 ci/test_walk.py
+          python3 ci/test_shot.py
+          python3 ci/e2e_harness_test.py
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          APK_PATH: ${{ github.workspace }}/candidate/app-release.apk
+          REQUIRE_ABI: arm64-v8a
+        with:
+          api-level: 30
+          arch: x86_64
+          target: google_apis
+          script: ./ci/startup_check.sh
+      - name: Keep the exact APK with the evidence
+        if: always()
+        run: |
+          mkdir -p out && cp candidate/app-release.apk out/candidate-app-release.apk && sha256sum out/candidate-app-release.apk | tee out/candidate.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: arm-translation-evidence, path: out/* }

@@ -140,6 +140,11 @@ def _run(s, dev, log):
         log("reached %s (%s)" % (label, heading))
         if last:
             s.unique(png, "verify key")
+            # Evidence only (no taps in fields): scroll once and keep a second screenshot of the gate text.
+            dev.scroll_down(); dev.sleep(2)
+            p2 = s.capture("c4_gate_scrolled", "app")
+            for ph in ("free tier", "improve", "products"):
+                log("gate scrolled: %r hits=%d" % (ph, len(s.find(p2, ph, True))))
             return "STOP", "optional steps skipped via screenshot-grounded taps; reached key gate (nothing entered)"
         s.unique(png, "skip for now")
     raise Stop("unreachable")

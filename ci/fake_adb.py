@@ -33,7 +33,7 @@ def key_at(x, y):
     for d in n.iter("node"):
         if d.get("text"): return d.get("text")
 if a[:2] == ["shell", "wm"]: print(G.get("wm_size", "Physical size: 320x640"))
-elif a[0] == "install": print("Success")
+elif a[0] == "install": print(G.get("install_out", "Success"))
 elif a[:2] == ["logcat", "-c"]: pass
 elif a[:2] == ["logcat", "-d"]: print(G.get("logcat", "I ActivityManager: ok"))
 elif a[:2] == ["shell", "monkey"]: print("Events injected: 1"); st["state"] = G["start"]; save()
@@ -58,6 +58,10 @@ elif a[:2] == ["exec-out", "screencap"]:
     elif cur.get("png"):
         p = os.path.join(D, cur["png"]); st["last_png"] = p; save(); sys.stdout.buffer.write(open(p, "rb").read())
     else: sys.stdout.buffer.write(b"\x89PNG-fake-" + st["state"].encode())
+elif a[:3] == ["shell", "getprop", "ro.product.cpu.abilist"]: print(G.get("abilist", "x86_64"))
+elif a[:3] == ["shell", "getprop", "ro.build.version.sdk"]: print(G.get("sdk", "33"))
+elif a[:3] == ["shell", "dumpsys", "package"]: print("    versionCode=559 minSdk=26\n    primaryCpuAbi=" + G.get("primary_abi", "x86_64") + "\n    secondaryCpuAbi=null")
+elif a[0] == "shell" and len(a) > 1 and a[1].startswith("grep -c ndk_translation"): print(G.get("translation_maps", "0"))
 elif a[:2] == ["shell", "dumpsys"]:
     f = G["states"][st["state"]].get("focus")
     print("  mCurrentFocus=Window{1a2b u0 %s}" % f if f else "  mCurrentFocus=null")

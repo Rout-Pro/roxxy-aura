@@ -44,6 +44,7 @@ class Dev:
                 return
     def back(self): self.st = self.g[self.st].get("back", self.st)
     def sleep(self, n): self.sleeps += 1
+    def scroll_down(self): self.taps.append(('scroll',))
 
 def run(g, **kw):
     d = Dev(g, **kw); logs = []; res = S.run_after_consent(d, logs.append); return res, d, logs
@@ -57,8 +58,8 @@ class T(unittest.TestCase):
     def test_happy_path_taps_land_on_real_bounds(self):
         res, d, _ = run(graph())
         self.assertEqual(res[0], "STOP", res); self.assertIn("key gate", res[1]); self.assertEqual(d.st, "key")
-        sts = [(s, x, y) for s, x, y in d.taps]
-        self.assertEqual([t[0] for t in sts], ["s5", "mic", "s5b", "s6", "s7"])
+        sts = [t for t in d.taps if t[0] != 'scroll']
+        self.assertEqual([t[0] for t in sts][:5], ["s5", "mic", "s5b", "s6", "s7"])
         self.assertTrue(inside(MIC_ROW, sts[0][1], sts[0][2]) and inside(SKIP5, sts[2][1], sts[2][2]))
     def test_stop_on_wrong_foreground_for_step5(self):
         res, _, _ = run(graph(s5={"focus": SETF}))  # Settings in front while app expected
