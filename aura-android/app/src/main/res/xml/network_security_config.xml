@@ -22,10 +22,19 @@
   public release, and it is already the strict one.
 -->
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+    <!-- Roxxy fork: cleartext only for loopback (on-device MCP server, UI stream). Everything else
+         is https-only. Upstream allowed cleartext globally so a user-typed LAN address (local
+         Ollama/LM Studio endpoint, optional legacy backend) would work; Android cannot express
+         "private IP ranges", so those LAN http endpoints do not work in this fork unless they
+         are served over https. -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system"/>
         </trust-anchors>
     </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">::1</domain>
+    </domain-config>
 </network-security-config>
-
