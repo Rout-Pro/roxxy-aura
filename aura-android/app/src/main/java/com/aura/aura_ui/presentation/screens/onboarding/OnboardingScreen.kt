@@ -57,6 +57,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
@@ -726,9 +727,10 @@ private fun HowAuraWorksStep(
     val scheme = rememberMonoScheme()
     val uriHandler = LocalUriHandler.current
 
+    Column(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .weight(1f)
             .verticalScroll(rememberScrollState())
             .padding(bottom = 12.dp),
     ) {
@@ -745,7 +747,7 @@ private fun HowAuraWorksStep(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Autonomous execution with on-device safety guard rails.",
+            text = "Roxxy can operate your phone for you. It has local safety checks, but it can make mistakes.",
             style = MaterialTheme.typography.bodyMedium,
             color = scheme.textSecondary,
         )
@@ -758,30 +760,34 @@ private fun HowAuraWorksStep(
             MonoRow(
                 icon = Icons.Filled.Visibility,
                 title = "Sees your screen",
-                subtitle = "Reads UI elements only while executing your tasks",
+                subtitle = "Reads on-screen UI while running your tasks; screen content goes to the AI provider you configure",
             )
             MonoDivider()
             MonoRow(
                 icon = Icons.Outlined.Mic,
                 title = "Speaks like a person",
-                subtitle = "Natural conversation powered by Gemini Live",
+                subtitle = "Voice mode uses Gemini Live and needs your own Gemini API key (untested in this build)",
             )
             MonoDivider()
             MonoRow(
                 icon = Icons.Filled.TouchApp,
                 title = "Acts on its own",
-                subtitle = "Performs taps, swipes, and typing securely",
+                subtitle = "Performs taps, swipes, and typing through Android Accessibility",
             )
             MonoDivider()
             MonoRow(
                 icon = Icons.Filled.Shield,
-                title = "Stays on your phone",
-                subtitle = "Private keys; sensitive banking apps permanently off-limits",
+                title = "Local safety limits",
+                subtitle = "Your API key is stored on this phone. Apps you mark restricted are blocked locally; this is not a guarantee",
             )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        Spacer(modifier = Modifier.height(14.dp))
+        AiDisclaimer()
+    }
+    // Agreement stays pinned above the button bar so it is always visible.
         // Grouped Agreement Card
         MonoSectionLabel("Agreement", scheme)
         Surface(
@@ -789,7 +795,11 @@ private fun HowAuraWorksStep(
             color = scheme.card,
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onAcceptedChanged(!accepted) },
+                .toggleable(
+                    value = accepted,
+                    role = androidx.compose.ui.semantics.Role.Checkbox,
+                    onValueChange = { onAcceptedChanged(it) },
+                ),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -840,9 +850,6 @@ private fun HowAuraWorksStep(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(14.dp))
-        AiDisclaimer()
     }
 }
 

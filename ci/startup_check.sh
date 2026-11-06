@@ -4,7 +4,7 @@ set -u
 APK=$(ls aura-android/app/build/outputs/apk/release/*.apk | head -1)
 PKG=com.roxxy.aura
 mkdir -p out
-adb install -r -g "$APK" > out/install.txt 2>&1; cat out/install.txt
+adb install -r "$APK" > out/install.txt 2>&1; cat out/install.txt
 adb logcat -c
 adb shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 > out/launch.txt 2>&1
 for t in 10 25; do
@@ -18,28 +18,7 @@ grep -E "FATAL EXCEPTION|AndroidRuntime|FirebaseApp|IllegalStateException" out/l
 echo "--- errors:"; cat out/errors.txt
 echo "--- ui text:"; grep -o 'text="[^"]\+"' out/ui_25.xml | head -30
 
-# ---- walk onboarding (bounded) ----
-cat > /tmp/walk.py <<'PY'
-import subprocess,re,sys,time
-def sh(c): return subprocess.run(c,shell=True,capture_output=True,text=True).stdout
-want=["Get Started","Accept Terms","I Understand","Next","Skip","Continue"]
-prev=None
-done_cb=False
-for i in range(1,13):
-    sh("adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1; adb pull /sdcard/w.xml out/walk_%d.xml >/dev/null 2>&1"%i)
-    x=open("out/walk_%d.xml"%i).read() if __import__('os').path.exists("out/walk_%d.xml"%i) else ""
-    sh("adb exec-out screencap -p > out/walk_%d.png"%i)
-    texts=re.findall(r'text="([^"]+)"',x); print(i,texts[:8])
-    tgt=None
-    for w in want:
-        m=re.search(r'text="%s"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"'%re.escape(w),x)
-        if m: tgt=m;break
-    prev=texts[:8]
-    if 'package="com.roxxy.aura"' not in x:
-        print('left app (system screen), stopping walk'); break
-    if not tgt: break
-    a,b,c,d=map(int,tgt.groups()); sh("adb shell input tap %d %d"%((a+c)//2,(b+d)//2)); time.sleep(4)
-PY
-python3 /tmp/walk.py | tee out/walk_log.txt
+# ---- walk onboarding (semantic selectors from the UI dump; one bounded pass) ----
+python3 ci/walk.py | tee out/walk_log.txt
 adb logcat -d | grep -E "FATAL EXCEPTION|ANR in" | head -10 > out/errors_after_walk.txt; echo "--- fatal/anr after walk:"; cat out/errors_after_walk.txt
 adb shell pidof $PKG > out/pid_after.txt 2>&1; echo "pid after: $(cat out/pid_after.txt)"
