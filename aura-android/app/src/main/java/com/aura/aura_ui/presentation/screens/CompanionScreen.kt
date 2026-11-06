@@ -196,7 +196,7 @@ fun CompanionScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(if (state.hasKey) "Update key" else "Save key") }
             Text(
-                "Get a free key at aistudio.google.com/apikey. Live preview models are free-tier eligible.",
+                "Get a key at aistudio.google.com/apikey. Google offers a free tier with limits; on it Google may use what you send to improve its products. Check Google's current terms.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -32,7 +32,10 @@ Network traffic
 Roxxy has no developer-run backend of its own, but it does use the network:
 - Your AI provider: what a task needs (your request, on-screen text, screenshots,
   voice in live mode) is sent from your phone to the provider you configure with your
-  own key. Their terms and prices apply.
+  own key. Their terms and prices apply. Free tiers can have limits, and some providers
+  may use what you send on a free tier to improve their products. Google's Gemini API
+  pricing page said so for its free tier when we checked (November 2026); terms can
+  change, so read your provider's current terms.
 - Web search and page fetch for tasks that need it: DuckDuckGo/Bing pages, or Tavily
   if you add a Tavily key.
 - Voice model downloads from Hugging Face, if you choose the on-device voice.

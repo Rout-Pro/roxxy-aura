@@ -15,6 +15,7 @@ Roxxy is an Android assistant that can read your screen and tap, type and scroll
 - Install is a sideloaded APK. Android will show a Play Protect prompt for apps from outside the Play Store.
 - It needs the Accessibility permission, which lets it see and operate other apps. Only grant it if you accept that.
 - You supply your own AI provider key in the app. Provider usage costs are charged by the provider to you.
+- Gemini has a free tier with limits. Google's pricing page says that on the free tier your content may be used to improve its products (checked November 2026; terms can change). Roxxy sends screenshots and on-screen text to your provider, so decide before you use a free key.
 - This fork was built and checked by CI (compile and unit tests). It has not been verified on a real phone by the person who made the changes. Treat it as a test build. Network use: your AI provider, web search/fetch, optional Hugging Face voice models; see in-app Privacy.
 
 ## Network limits in this fork

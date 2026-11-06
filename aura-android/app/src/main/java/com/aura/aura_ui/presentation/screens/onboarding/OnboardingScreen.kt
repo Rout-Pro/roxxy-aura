@@ -1579,8 +1579,10 @@ private fun GeminiKeyStep(onVerifiedChanged: (Boolean) -> Unit) {
                 Text(
                     text = "Gemini is just the starting preset. How well Roxxy completes tasks depends on " +
                         "the model you use, and you can switch to any provider later in Settings → Brain. " +
-                        "We start with Gemini because one free key also gives you Gemini Live, a natural " +
-                        "voice assistant at no cost.",
+                        "We start with Gemini because Google offers a free tier, with limits, that also " +
+                        "covers Gemini Live. On a free tier Google may use what you send, including " +
+                        "screenshots and on-screen text, to improve its products. Check Google's current " +
+                        "terms and prices before you rely on it.",
                     style = MaterialTheme.typography.bodySmall,
                     color = scheme.textPrimary,
                 )

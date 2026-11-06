@@ -108,6 +108,16 @@ class T(unittest.TestCase):
     def test_fail_os_blocks_enable(self):
         res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), blocked_page()])
         self.assertEqual(res[0], "FAIL"); self.assertIn("OS blocked", res[1])
+    def test_no_absolute_free_claim_and_free_tier_data_use_disclosed(self):
+        root = os.path.join(os.path.dirname(__file__), "..", "aura-android/app/src/main/java/com/aura/aura_ui/presentation/screens")
+        files = ["onboarding/OnboardingScreen.kt", "ProviderSettingsScreen.kt", "CompanionScreen.kt", "legal/LegalCopy.kt"]
+        for f in files:
+            with open(os.path.join(root, f)) as fh: src = fh.read()
+            self.assertNotIn("at no cost", src, f); self.assertNotIn("free-tier eligible", src, f)
+        for f in files[:3]:
+            with open(os.path.join(root, f)) as fh: src = fh.read()
+            self.assertIn("improve its products", src, f)
+        with open(os.path.join(root, files[3])) as fh: self.assertIn("improve their products", fh.read())
     def test_skip_and_missing_permission_copy_present_in_source(self):
         src = open(os.path.join(os.path.dirname(__file__), "..", "aura-android/app/src/main/java/com/aura/aura_ui/presentation/screens/onboarding/OnboardingScreen.kt")).read()
         for needle in ("Skip for now", "stay off until you enable them", "will fail until you enable its keyboard"): self.assertIn(needle, src)

@@ -874,8 +874,10 @@ private fun StatusBanner(cs: CapsuleScheme, providerName: String, isConfigured: 
  */
 private const val GEMINI_PRESET_NOTE =
     "Gemini is just the starting preset. How well Roxxy completes tasks depends on the model you " +
-        "pick here, and any provider works. We default to Gemini because the same free key also " +
-        "unlocks Gemini Live, a natural voice assistant at no cost."
+        "pick here, and any provider works. We default to Gemini because Google offers a free tier, " +
+        "with limits, that also covers Gemini Live. On a free tier Google may use what you send, including " +
+        "screenshots and on-screen text, to improve its products. Check Google's current terms and prices " +
+        "before you rely on it."
 
 /** Neutral explanatory note: card sheet, info icon, no accent (it is not a problem). */
 @Composable
