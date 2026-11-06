@@ -11,7 +11,7 @@ class Adb:
         self.screen_h = int(out.strip().split(":")[-1].strip().split("x")[1])
     def dump(self, name):
         for _ in range(3):
-            sh("adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1; adb pull /sdcard/w.xml out/walk_%s.xml >/dev/null 2>&1" % name)
+            sh("adb shell rm -f /sdcard/w.xml; rm -f out/walk_%s.xml; adb shell uiautomator dump /sdcard/w.xml >/dev/null 2>&1; adb pull /sdcard/w.xml out/walk_%s.xml >/dev/null 2>&1" % (name, name, name))
             try:
                 r = ET.parse("out/walk_%s.xml" % name).getroot()
                 if len(list(r.iter("node"))) > 0:
