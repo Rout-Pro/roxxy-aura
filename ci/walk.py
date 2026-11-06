@@ -36,28 +36,32 @@ r=dump("2"); print("2 policy",texts(r)[:10])
 cbs=[n for n in r.iter("node") if n.get("checkable")=="true"]
 print("checkable nodes:",[(n.get("class"),n.get("checked"),n.get("bounds")) for n in cbs])
 btn=clickable_for(r,"Accept Terms")
-if btn is not None: print("accept button enabled before tick:",btn.get("enabled"),"bounds",btn.get("bounds"))
+if btn is not None: print("button label before tick:",btn.get("text") or [t for t in texts(r) if t in ("Accept Terms","I Understand")],"| enabled:",btn.get("enabled"),"bounds",btn.get("bounds"))
 if not cbs: print("STOP: agreement checkbox not found in dump"); raise SystemExit
 print("agreement bounds",cbs[0].get("bounds")); tap(cbs[0])
 r=dump("3_agreement_checked")
 cbs=[n for n in r.iter("node") if n.get("checkable")=="true"]
 print("after tap checked:",[n.get("checked") for n in cbs])
 if not cbs or cbs[0].get("checked")!="true": print("STOP: agreement did not become checked"); raise SystemExit
-b=find_text(r,"I Understand") or find_text(r,"Accept Terms")
+b=find_text(r,"I Understand") or find_text(r,"Accept Terms"); print("button label after tick:",b.get("text") if b is not None else None)
+if b is None: print("STOP: no policy button"); raise SystemExit
 tap(clickable_for(r,b.get("text")))
 r=dump("4_after_policy"); print("4 after policy",texts(r)[:12])
-for k in range(5,12):
-    if not in_app(r):
-        print("left app, pressing BACK"); sh("adb shell input keyevent KEYCODE_BACK"); time.sleep(2); r=dump("%d_back"%k); continue
-    t=texts(r); print(k,"stage",t[:10])
+# Stages after policy: tap the dump's own "Next" until the first stage without one (a permission step).
+r=dump("5_stage")
+for k in range(6,10):
+    t=texts(r); print("stage",t[:10])
     if any(x in t for x in ("Verify Key","Bring your own Gemini key")):
-        print("REACHED key-required state; stopping (no key entered)"); break
-    if find_text(r,"Next") is not None:
-        tap(clickable_for(r,"Next")); r=dump("%d_next"%k); continue
-    sw=[n for n in r.iter("node") if n.get("checkable")=="true"]
-    print("permission step; switches:",[(n.get("checked"),n.get("bounds")) for n in sw])
-    if sw: tap(sw[0]); r=dump("%d_tapped_perm"%k)
-    d=find_text(r,"Don\u2019t allow") or find_text(r,"Don't allow") or find_text(r,"Deny")
-    if d is not None:
-        print("denying runtime permission dialog"); tap(d); r=dump("%d_denied"%k)
-    print("after perm attempt",texts(r)[:10]); break
+        print("REACHED key step; stopping (no key entered)"); raise SystemExit
+    if find_text(r,"Next") is None: break
+    tap(clickable_for(r,"Next")); r=dump("%d_stage"%k)
+print("FIRST MANDATORY PERMISSION STEP (no Next button):",texts(r)[:10])
+sw=[n for n in r.iter("node") if n.get("checkable")=="true"]
+print("switches:",[(n.get("checked"),n.get("bounds")) for n in sw])
+if sw:
+    tap(sw[0]); r=dump("perm_row_tapped")
+    print("after tapping first row once; in_app:",in_app(r),texts(r)[:8])
+    if not in_app(r):
+        sh("adb shell input keyevent KEYCODE_BACK"); time.sleep(2); r=dump("perm_back")
+        print("after BACK; in_app:",in_app(r),texts(r)[:8])
+print("STOP: remaining mandatory permission steps and key gate not exercised")
