@@ -348,9 +348,10 @@ class MainActivity : FragmentActivity() {
         // Home-first entry: request the basic runtime permissions if missing, but ALWAYS
         // land on the Home screen — the overlay opens only from "Start chatting". The
         // Home health banner surfaces anything still broken with a one-tap fix.
+        // Roxxy: optional permissions (mic, overlay, notifications) are not requested on every
+        // launch. They are requested when a feature needs them, or from Settings/Home.
         if (!checkPermissions()) {
-            Log.d(TAG, "Basic permissions not granted - requesting")
-            requestPermissions()
+            Log.d(TAG, "Some optional permissions not granted; not prompting at launch")
         }
         showAppShell()
     }

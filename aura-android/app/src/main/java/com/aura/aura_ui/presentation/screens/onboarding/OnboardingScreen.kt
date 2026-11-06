@@ -385,6 +385,41 @@ fun OnboardingScreen(
             }
         }
 
+        // Steps 5-7 are optional features. Accessibility (step 4) and the AI key (step 8) stay
+        // required. Skipping grants nothing; the feature stays off until enabled later.
+        if (step in 5..7) {
+            val skipNote = when (step) {
+                5 -> "Voice and the floating overlay stay off until you enable them."
+                6 -> "Roxxy cannot type into fields until you enable its keyboard."
+                else -> "Notification alerts and quick replies stay off until you enable them."
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = skipNote,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = scheme.textSecondary,
+                )
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFEFE8DA),
+                    modifier = Modifier
+                        .padding(top = 4.dp, bottom = 6.dp)
+                        .clip(CircleShape)
+                        .clickable { step++ },
+                ) {
+                    Text(
+                        text = "Skip for now",
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 9.dp),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF222220),
+                    )
+                }
+            }
+        }
+
         if (step > 0 && !isPermissionStep) {
             Spacer(modifier = Modifier.height(10.dp))
 

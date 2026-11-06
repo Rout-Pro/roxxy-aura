@@ -92,32 +92,78 @@ def run(dev, log):
         return "FAIL", "button still disabled after tick"
     dev.tap(bc)
     r = dev.dump("4_after_policy")
-    for k in range(5, 10):
+    # Stages: tap Next until the first stage without one (the mandatory Accessibility gate).
+    for k in range(5, 9):
         t = texts(r)
         log("stage %s" % t[:6])
         if not in_app(r):
-            dev.back()
-            r = dev.dump("%d_back" % k)
-            if not in_app(r):
-                return "FAIL", "left app and BACK did not return"
-            return "STOP", "left app at stage; pressed BACK once and returned"
+            return "FAIL", "left app unexpectedly"
         if any(m in t for m in KEY_MARKERS):
-            return "STOP", "reached key step (nothing entered)"
-        nxt = find_text(r, "Next")
-        if nxt is None:
-            sw = checkables(r)
-            log("first mandatory permission step (no Next); switches=%s" % [(s.get("checked"), s.get("bounds")) for s in sw])
-            if not sw:
-                return "FAIL", "no Next and no switch on stage"
-            dev.tap(sw[0])
-            r = dev.dump("perm_row_tapped")
-            if not in_app(r):
-                dev.back()
-                r = dev.dump("perm_back")
-                if not in_app(r):
-                    return "FAIL", "left app for permission and BACK did not return"
-                return "STOP", "first permission row opened system UI; BACK returned to app"
-            return "STOP", "first permission row tapped; stayed in app"
+            return "STOP", "reached key step before the permission gate (nothing entered)"
+        if find_text(r, "Next") is None:
+            break
         dev.tap(clickable_for(r, "Next"))
         r = dev.dump("%d_stage" % k)
-    return "FAIL", "too many stages"
+    else:
+        return "FAIL", "too many stages before the accessibility gate"
+    sw = checkables(r)
+    if find_text(r, "Skip for now") is not None:
+        return "FAIL", "accessibility gate must not be skippable"
+    if not sw:
+        return "FAIL", "no switch on accessibility gate"
+    log("accessibility gate (no Next, no skip); switch=%s" % sw[0].get("bounds"))
+    dev.tap(sw[0])
+    r = dev.dump("a1_settings_list")
+    row = find_text(r, "Roxxy")
+    if in_app(r) or row is None:
+        return "FAIL", "Settings Accessibility list with Roxxy not shown"
+    dev.tap(clickable_for(r, "Roxxy"))
+    r = dev.dump("a2_service_page")
+    sw2 = checkables(r)
+    if in_app(r) or not sw2:
+        return "FAIL", "service page with a toggle not shown"
+    dev.tap(sw2[0])
+    r = dev.dump("a3_after_toggle")
+    allow = find_text(r, "Allow", "OK", "Turn on", "Use Roxxy")
+    if allow is not None and clickable_for(r, allow.get("text")) is not None and allow.get("text") != "Use Roxxy":
+        dev.tap(clickable_for(r, allow.get("text")))
+        r = dev.dump("a4_after_confirm")
+    for j in range(3):
+        if in_app(r):
+            break
+        dev.back()
+        r = dev.dump("a5_back_%d" % j)
+    if not in_app(r):
+        return "FAIL", "could not return to app after enabling Accessibility via Settings UI"
+    dev.sleep(2)
+    r = dev.dump("b0_after_grant")
+    t = texts(r)
+    log("after grant %s" % t[:6])
+    if find_text(r, "Skip for now") is None:
+        return "FAIL", "stage 5 (optional voice/overlay) with Skip not reached after accessibility grant"
+    # Stage 5: refuse the runtime mic dialog once, expect to stay in app, then skip.
+    sw5 = checkables(r)
+    if sw5:
+        dev.tap(sw5[0])
+        r = dev.dump("b1_mic_prompt")
+        deny = find_text(r, "Don\u2019t allow", "Don't allow", "Deny")
+        if deny is not None:
+            dev.tap(clickable_for(r, deny.get("text")))
+            r = dev.dump("b2_mic_denied")
+        if not in_app(r):
+            return "FAIL", "left app during mic refusal"
+        if find_text(r, "Skip for now") is None:
+            return "FAIL", "Skip not available after refusing mic"
+    for n_stage, k in ((5, "b3"), (6, "b4"), (7, "b5")):
+        sk = find_text(r, "Skip for now")
+        if sk is None:
+            return "FAIL", "Skip for now missing at optional stage %d" % n_stage
+        log("skipping optional stage %d: %s" % (n_stage, [x for x in texts(r) if "stay off" in x or "cannot" in x]))
+        dev.tap(clickable_for(r, "Skip for now"))
+        r = dev.dump("%s_after_skip" % k)
+        if not in_app(r):
+            return "FAIL", "left app after skip"
+    t = texts(r)
+    if any(m in t for m in KEY_MARKERS):
+        return "STOP", "optional steps skipped; reached key step (nothing entered)"
+    return "FAIL", "key step not reached after skipping optional steps: %s" % t[:6]

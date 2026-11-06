@@ -23,6 +23,7 @@ class Adb:
         return r
     def tap(self, nd):
         a, b, c, d = W.box(nd); sh("adb shell input tap %d %d" % ((a + c) // 2, (b + d) // 2)); time.sleep(3)
+    def sleep(self, n): time.sleep(n)
     def back(self): sh("adb shell input keyevent KEYCODE_BACK"); time.sleep(2)
     def scroll_down(self):
         h = self.screen_h; sh("adb shell input swipe 160 %d 160 %d 300" % (int(h * .7), int(h * .3))); time.sleep(1)

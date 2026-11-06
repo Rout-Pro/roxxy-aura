@@ -13,6 +13,15 @@ def perm_screen(): return screen(node(text="Accessibility Service"), node(checka
 def key_screen(): return screen(node(text="Bring your own Gemini key"), node(text="Verify Key"))
 SYSTEM = lambda: screen(node(text="Accessibility", pkg="com.android.settings"), pkg="com.android.settings")
 
+
+def row(text, bounds="[0,254][320,333]"): return node(clickable="true", bounds=bounds, children=[node(text=text)])
+def settings_list(): return screen(node(text="Downloaded apps", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Roxxy", pkg="com.android.settings")]), pkg="com.android.settings")
+def service_page(): return screen(node(text="Use Roxxy", pkg="com.android.settings"), node(checkable="true", clickable="true", pkg="com.android.settings"), pkg="com.android.settings")
+def dialog(): return screen(node(text="Allow Roxxy full control?", pkg="com.android.settings"), node(clickable="true", pkg="com.android.settings", children=[node(text="Allow", pkg="com.android.settings")]), pkg="com.android.settings")
+def skip_screen(txt="Voice and the floating overlay stay off until you enable them."): return screen(node(text="Microphone Access"), node(checkable="true", clickable="true", bounds="[20,80][300,130]"), node(text=txt), node(clickable="true", children=[node(text="Skip for now")]))
+def mic_dialog(): return screen(node(text="Allow Roxxy to record audio?", pkg="com.android.permissioncontroller"), node(clickable="true", pkg="com.android.permissioncontroller", children=[node(text="Don\u2019t allow", pkg="com.android.permissioncontroller")]), pkg="com.android.permissioncontroller")
+def plain_stage(): return screen(node(text="Roxxy Virtual Keyboard"), node(clickable="true", children=[node(text="Skip for now")]))
+
 class Dev:
     """Scripted device: dumps come from a queue keyed by action sequence."""
     def __init__(self, seq, screen_h=640): self.seq = list(seq); self.screen_h = screen_h; self.taps = []; self.backs = 0; self.scrolls = 0; self.names = []
@@ -20,6 +29,7 @@ class Dev:
     def tap(self, nd): self.taps.append(nd.get("bounds"))
     def back(self): self.backs += 1
     def scroll_down(self): self.scrolls += 1
+    def sleep(self, n): pass
 
 def go(seq, **kw):
     d = Dev(seq, **kw); logs = []
@@ -42,15 +52,6 @@ class T(unittest.TestCase):
     def test_visibility_on_320x640(self):
         self.assertTrue(W.fully_visible(W.checkables(load("policy_unchecked"))[0], 640))
     def happy_prefix(self): return [load("landing"), load("policy_unchecked"), load("policy_checked")]
-    def test_full_path_to_first_permission_system_ui(self):
-        res, d, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), SYSTEM(), perm_screen()])
-        self.assertEqual(res[0], "STOP"); self.assertIn("BACK returned", res[1]); self.assertEqual(d.backs, 1)
-        self.assertEqual(len(d.taps), 6)
-    def test_stays_in_app_after_permission_tap(self):
-        res, d, _ = go(self.happy_prefix() + [next_screen(), perm_screen(), perm_screen()])
-        self.assertEqual(res, ("STOP", "first permission row tapped; stayed in app")); self.assertEqual(d.backs, 0)
-    def test_reaches_key_step(self):
-        res, _, _ = go(self.happy_prefix() + [key_screen()]); self.assertEqual(res[0], "STOP"); self.assertIn("key step", res[1])
     def test_fail_no_get_started(self):
         self.assertEqual(go([screen(node(text="Loading"))])[0][0], "FAIL")
     def test_fail_not_in_app(self):
@@ -71,10 +72,30 @@ class T(unittest.TestCase):
         for n in r.iter("node"):
             if n.get("clickable") == "true" and n.get("bounds") == "[70,574][250,626]": n.set("enabled", "false")
         self.assertEqual(go([load("landing"), load("policy_unchecked"), r])[0], ("FAIL", "button still disabled after tick"))
-    def test_fail_left_app_and_back_fails(self):
-        res, _, _ = go(self.happy_prefix() + [SYSTEM(), SYSTEM()]); self.assertEqual(res[0], "FAIL")
-    def test_fail_too_many_stages(self):
-        res, _, _ = go(self.happy_prefix() + [next_screen()] * 7); self.assertEqual(res, ("FAIL", "too many stages"))
-    def test_fail_stage_without_next_or_switch(self):
-        res, _, _ = go(self.happy_prefix() + [screen(node(text="???"))]); self.assertEqual(res[0], "FAIL")
+    def full(self, **over):
+        seq = self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), dialog(), SYSTEM(), perm_screen(), skip_screen(), mic_dialog(), skip_screen(), plain_stage(), plain_stage(), key_screen()]
+        return seq
+    def test_full_revised_path(self):
+        res, d, logs = go(self.full())
+        self.assertEqual(res[0], "STOP"); self.assertIn("key step", res[1]); self.assertEqual(d.backs, 1)
+    def test_accessibility_gate_must_not_be_skippable(self):
+        res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), skip_screen()])
+        self.assertEqual(res, ("FAIL", "accessibility gate must not be skippable"))
+    def test_fail_settings_list_without_roxxy(self):
+        res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), SYSTEM()]); self.assertEqual(res[0], "FAIL")
+    def test_fail_never_returns_to_app(self):
+        res, _, _ = go(self.happy_prefix() + [next_screen(), next_screen(), perm_screen(), settings_list(), service_page(), dialog(), SYSTEM(), SYSTEM(), SYSTEM(), SYSTEM()])
+        self.assertEqual(res[0], "FAIL"); self.assertIn("could not return", res[1])
+    def test_fail_no_skip_after_grant(self):
+        seq = self.full(); seq[11] = perm_screen()  # b0 dump lacks Skip
+        res, _, _ = go(seq[:12]); self.assertEqual(res[0], "FAIL"); self.assertIn("Skip", res[1])
+    def test_fail_skip_missing_later_stage(self):
+        seq = self.full(); seq[15] = screen(node(text="Notifications"))
+        res, _, _ = go(seq); self.assertEqual(res[0], "FAIL")
+    def test_fail_left_app_during_mic_refusal(self):
+        seq = self.full(); seq[13] = SYSTEM()
+        res, _, _ = go(seq[:14]); self.assertEqual(res, ("FAIL", "left app during mic refusal"))
+    def test_fail_key_step_not_reached(self):
+        seq = self.full(); seq[-1] = plain_stage()
+        res, _, _ = go(seq); self.assertEqual(res[0], "FAIL")
 if __name__ == "__main__": unittest.main()
