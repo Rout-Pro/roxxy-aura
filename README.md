@@ -17,6 +17,11 @@ Roxxy is an Android assistant that can read your screen and tap, type and scroll
 - You supply your own AI provider key in the app. Provider usage costs are charged by the provider to you.
 - This fork was built and checked by CI (compile and unit tests). It has not been verified on a real phone by the person who made the changes. Treat it as a test build. Network use: your AI provider, web search/fetch, optional Hugging Face voice models; see in-app Privacy.
 
+## Network limits in this fork
+
+- Plain http is allowed only to loopback (`localhost`, `127.0.0.1`, `::1`): the on-device MCP server and a model server running on the same phone. Everything else must be https. The app rejects http endpoints with a message saying so.
+- Local-model servers on another machine over plain http (for example Ollama at `192.168.x.x`) are NOT supported. Upstream allowed cleartext globally; this fork does not. Serving such an endpoint over https works. A scoped per-endpoint allowance for a user-approved LAN host could be added later.
+
 ## Build
 
 Android Studio or `cd aura-android && ./gradlew assembleRelease` (JDK 17). The workflow in `.github/workflows/build.yml` builds the release APK and attaches it to a GitHub release.

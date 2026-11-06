@@ -18,7 +18,7 @@ object McpUrlValidator {
         return when (val scheme = uri.scheme?.lowercase()) {
             "https" -> Result.success(Unit)
             "http" -> if (allowLocalhostDebug && host in LOCALHOSTS) Result.success(Unit)
-                else Result.failure(IllegalArgumentException("Only https URLs are allowed"))
+                else Result.failure(IllegalArgumentException("Only https URLs are allowed. Plain http works only for localhost or 127.0.0.1 on this phone. A computer or server on your Wi-Fi (for example Ollama at 192.168.x.x) must be served over https."))
             else -> Result.failure(IllegalArgumentException("Unsupported URL scheme: $scheme"))
         }
     }
