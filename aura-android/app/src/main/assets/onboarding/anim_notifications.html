@@ -186,7 +186,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 .widget-time{font-size:32px;font-weight:800;color:#1C1A17;letter-spacing:-1px}
 .widget-date{font-size:9px;font-weight:600;color:#57534A}
 
-/* App Grid Dock with White BG AURA App Icon at Center */
+/* App Grid Dock with White BG Roxxy App Icon at Center */
 .app-dock{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.7);border-radius:22px;border:1px solid rgba(255,255,255,0.85)}
 .app-icon{width:34px;height:34px;border-radius:11px;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.06);transition:all 0.15s ease}
 .app-icon.phone-app{background:#34C759;color:#FFFFFF}
@@ -281,7 +281,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 .notif-title-text{font-size:9.5px;font-weight:800;color:#1C1A17}
 .notif-desc{font-size:8.5px;color:#57534A;line-height:1.3;font-weight:500}
 
-/* AURA Smart Brief Card in Drawer */
+/* Roxxy Smart Brief Card in Drawer */
 .aura-brief-card{
   background:#1C1A17;
   border-radius:14px;
@@ -327,7 +327,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
       <div class="notch-island" id="notchIsland">
         <div class="notch-cam"></div>
         <div class="notch-content">
-          <img src="aura_logo_mono.png" class="notch-logo" alt="AURA">
+          <img src="aura_logo_mono.png" class="notch-logo" alt="Roxxy">
           <span class="notch-verb" id="notchVerbText">Reading</span>
         </div>
       </div>
@@ -358,9 +358,9 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
             </svg>
           </div>
 
-          <!-- White Background AURA App Icon -->
+          <!-- White Background Roxxy App Icon -->
           <div class="app-icon aura-app">
-            <img src="aura_logo_color.png" class="aura-dock-img" alt="AURA">
+            <img src="aura_logo_color.png" class="aura-dock-img" alt="Roxxy">
           </div>
 
           <div class="app-icon msg-app">
@@ -639,12 +639,12 @@ function animate(ts) {
     const p = (t - 0.16) / 0.26;
     const ep = easeInOut(p);
     
-    // Scroll list up to show all 5 cards & AURA Smart Brief
+    // Scroll list up to show all 5 cards & Roxxy Smart Brief
     notifList.style.transform = `translateY(${-ep * 140}px)`;
     setFingertip(lerp(124, 140, ep), lerp(260, 160, ep));
   } 
   else if (t < 0.65) {
-    // 3.55s - 5.5s: Notch switches to "Reading" as AURA reads and generates the Smart Brief
+    // 3.55s - 5.5s: Notch switches to "Reading" as Roxxy reads and generates the Smart Brief
     notchVerbText.innerText = 'Reading';
     const p = (t - 0.42) / 0.23;
     const ep = easeInOut(p);

@@ -124,11 +124,11 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 .widget-time{font-size:32px;font-weight:800;color:#1C1A17;letter-spacing:-1px}
 .widget-date{font-size:9px;font-weight:600;color:#57534A}
 
-/* App Grid Dock with White BG AURA App Icon at Center */
+/* App Grid Dock with White BG Roxxy App Icon at Center */
 .app-dock{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.7);border-radius:22px;border:1px solid rgba(255,255,255,0.85)}
 .app-icon{width:34px;height:34px;border-radius:11px;display:flex;justify-content:center;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.06);transition:all 0.15s ease}
 .app-icon.phone-app{background:#34C759;color:#FFFFFF}
-/* AURA App with White Background */
+/* Roxxy App with White Background */
 .app-icon.aura-app{
   width:40px;
   height:40px;
@@ -195,7 +195,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 .bubble-aura.show{opacity:1;transform:translateY(0)}
 .aura-bubble-logo{width:12px;height:12px;object-fit:contain;flex-shrink:0}
 
-/* AURA Floating Input & Mic Overlay Bar (No Blur, Sharp & Clear) */
+/* Roxxy Floating Input & Mic Overlay Bar (No Blur, Sharp & Clear) */
 .aura-bottom-overlay{
   position:absolute;
   left:8px;
@@ -233,7 +233,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 }
 .close-svg{width:12px;height:12px}
 
-/* Middle Content: Switches smoothly from "Ask AURA..." to Live Spectrogram Wave */
+/* Middle Content: Switches smoothly from "Ask Roxxy..." to Live Spectrogram Wave */
 .overlay-middle-area{
   flex:1;
   height:34px;
@@ -269,7 +269,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 .wave-container.active{opacity:1;transform:translateY(0)}
 .wave-bar{width:2.5px;height:4px;background:#D62828;border-radius:2px;transition:height 0.08s ease}
 
-/* Right Side: AURA Logo as Mic Button (Always visible) with Tooltip */
+/* Right Side: Roxxy Logo as Mic Button (Always visible) with Tooltip */
 .mic-btn-wrapper{position:relative;flex-shrink:0}
 .aura-mic-btn{
   width:36px;
@@ -435,7 +435,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
       <div class="notch-island" id="notchIsland">
         <div class="notch-cam"></div>
         <div class="notch-content">
-          <img src="aura_logo_mono.png" class="notch-logo" alt="AURA">
+          <img src="aura_logo_mono.png" class="notch-logo" alt="Roxxy">
           <span class="notch-verb" id="notchVerbText">Listening</span>
         </div>
       </div>
@@ -459,7 +459,7 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
           <span class="widget-date">Sunday, August 23</span>
         </div>
 
-        <!-- App Dock with White BG AURA App at Center -->
+        <!-- App Dock with White BG Roxxy App at Center -->
         <div class="app-dock">
           <div class="app-icon phone-app">
             <svg class="app-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -467,9 +467,9 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
             </svg>
           </div>
 
-          <!-- Official AURA App with White Background -->
+          <!-- Official Roxxy App with White Background -->
           <div class="app-icon aura-app" id="auraAppIcon">
-            <img src="aura_logo_color.png" class="aura-dock-img" alt="AURA">
+            <img src="aura_logo_color.png" class="aura-dock-img" alt="Roxxy">
           </div>
 
           <div class="app-icon msg-app">
@@ -489,14 +489,14 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 
       <!-- Dialogue Transcript Cards (Floating above the bottom overlay) -->
       <div class="transcript-layer">
-        <div class="bubble-user" id="bubbleUser">"Hey AURA, what's my next task?"</div>
+        <div class="bubble-user" id="bubbleUser">"Hey Roxxy, what's my next task?"</div>
         <div class="bubble-aura" id="bubbleAura">
-          <img src="aura_logo_color.png" class="aura-bubble-logo" alt="AURA">
+          <img src="aura_logo_color.png" class="aura-bubble-logo" alt="Roxxy">
           <span id="auraSpeechText">You have a team sync at 6:30 PM.</span>
         </div>
       </div>
 
-      <!-- AURA Bottom Overlay Bar (Close Button + "Ask AURA..." / Wave + AURA Logo Mic Button) -->
+      <!-- Roxxy Bottom Overlay Bar (Close Button + "Ask Roxxy..." / Wave + Roxxy Logo Mic Button) -->
       <div class="aura-bottom-overlay" id="bottomOverlay">
         
         <!-- Left: Close Button -->
@@ -509,13 +509,13 @@ body{display:flex;justify-content:center;align-items:center;min-height:100vh;bac
 
         <!-- Middle: Text Area that morphs into Wave Animation -->
         <div class="overlay-middle-area">
-          <span class="ask-aura-text" id="askAuraText">Ask AURA...</span>
+          <span class="ask-aura-text" id="askAuraText">Ask Roxxy...</span>
           <div class="wave-container" id="waveContainer">
             <!-- 22 Bars generated by JS -->
           </div>
         </div>
 
-        <!-- Right: AURA Logo as Mic Button with Tooltip -->
+        <!-- Right: Roxxy Logo as Mic Button with Tooltip -->
         <div class="mic-btn-wrapper">
           <div class="mic-tooltip" id="micTooltip">Tap to speak</div>
           <div class="aura-mic-btn" id="auraMicBtn">
@@ -667,7 +667,7 @@ function animate(ts) {
     bars.forEach(b => b.style.height = '4px');
   } 
   else if (t < 0.16) {
-    // 0.25s - 1.25s: Hand taps AURA App on Home Dock -> App opens bottom overlay bar
+    // 0.25s - 1.25s: Hand taps Roxxy App on Home Dock -> App opens bottom overlay bar
     const p = (t - 0.03) / 0.13;
     const ep = easeInOut(p);
     hand.style.opacity = '1';
@@ -686,7 +686,7 @@ function animate(ts) {
     }
   }
   else if (t < 0.30) {
-    // 1.25s - 2.4s: Bottom overlay appears with Close + "Ask AURA..." + AURA Mic button + Tooltip
+    // 1.25s - 2.4s: Bottom overlay appears with Close + "Ask Roxxy..." + Roxxy Mic button + Tooltip
     bottomOverlay.classList.add('show');
     micTooltip.classList.add('show');
 
@@ -696,7 +696,7 @@ function animate(ts) {
     setFingertip(lerp(120, micPos.x, ep), lerp(450, micPos.y, ep));
   }
   else if (t < 0.58) {
-    // 2.4s - 4.6s: Hand taps AURA Mic button -> Text morphs into Live Waveform! Notch expands to "Listening"
+    // 2.4s - 4.6s: Hand taps Roxxy Mic button -> Text morphs into Live Waveform! Notch expands to "Listening"
     micTooltip.classList.remove('show');
     askAuraText.classList.add('hidden');
     waveContainer.classList.add('active');
@@ -731,7 +731,7 @@ function animate(ts) {
     bars.forEach(b => b.style.height = '4px');
   } 
   else if (t < 0.90) {
-    // 5.4s - 7.2s: AURA Voice Output (Notch: "Speaking" & response bubble streams in)
+    // 5.4s - 7.2s: Roxxy Voice Output (Notch: "Speaking" & response bubble streams in)
     notchVerbText.innerText = 'Speaking';
     bubbleAura.classList.add('show');
 
