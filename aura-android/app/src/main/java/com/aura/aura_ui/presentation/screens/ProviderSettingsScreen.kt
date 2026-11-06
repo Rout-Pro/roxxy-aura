@@ -186,12 +186,12 @@ fun ProviderSettingsScreen(
                 isConfigured = canSave && keyStore.getSelectedModel(endpoint.id) == selectedModel,
             )
 
-            // B2 — the Android Keystore was unavailable, so keys are stored UNENCRYPTED. Don't report
-            // silent success: warn, so the user can decide whether to trust this device with a real key.
+            // Secure storage is fail-closed: with no working Android Keystore the key is NOT saved
+            // anywhere (no plaintext fallback), so say so instead of reporting success.
             if (keyRequired && !keyStore.isEncrypted) {
                 AttentionBanner(
-                    message = "Secure storage is unavailable on this device — API keys are saved " +
-                        "unencrypted. Avoid storing a sensitive key here.",
+                    message = "Secure storage is unavailable on this device, so Roxxy cannot save " +
+                        "an API key here. Nothing is stored unencrypted.",
                     cs = cs,
                 )
             }
@@ -342,10 +342,10 @@ fun ProviderSettingsScreen(
                 PrimaryPill(
                     text = "Save",
                     cs = cs,
-                    enabled = canSave,
+                    enabled = canSave && (!keyRequired || keyStore.isEncrypted),
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        if (keyRequired) keyStore.setKey(endpoint.id, keyText.trim())
+                        if (keyRequired && !keyStore.setKey(endpoint.id, keyText.trim())) return@PrimaryPill
                         keyStore.setSelectedEndpointId(endpoint.id)
                         selectedModel?.let { keyStore.setSelectedModel(endpoint.id, it) }
                         // Capture the model's context window while we still have it: this is the

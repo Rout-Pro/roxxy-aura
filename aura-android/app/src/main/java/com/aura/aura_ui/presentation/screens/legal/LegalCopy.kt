@@ -23,10 +23,20 @@ which described that backend.
 
 What Roxxy does on your phone
 Roxxy can read what is on your screen and tap, type and scroll in other apps through
-Android's Accessibility service, when you ask it to. It may use the microphone,
-screenshots, notifications and contacts only if you grant those permissions. Known
-banking, payment and authenticator apps are blocked by the app's own rules. That list
-cannot cover every app.
+Android's Accessibility service, when you ask it to. Banking, payment and authenticator
+apps known to the app are blocked by its own rules. That list cannot cover every app.
+
+Permissions
+Roxxy's manifest declares more permissions than it uses at any moment. Declaring one
+does not mean it is granted: Android asks you, or you switch it on in system Settings,
+and you can refuse or revoke each one.
+- Needs your explicit setup: Accessibility service (required for Roxxy to work),
+  microphone, notifications, display over other apps, battery optimisation exemption.
+- Requested only when a task uses it: contacts, camera, photos/video/audio files,
+  location, Bluetooth and Wi-Fi state, alarms, system settings and Do Not Disturb.
+- Declared without a prompt: internet, network state, vibrate, wake lock, start on
+  boot, foreground services, and the list of installed apps (used to open apps by name).
+Roxxy cannot use contacts, camera, location or files you have not allowed.
 
 Network traffic
 Roxxy has no developer-run backend of its own, but it does use the network:
@@ -42,7 +52,9 @@ Roxxy has no developer-run backend of its own, but it does use the network:
 - Your phone's own speech recognizer, which may send audio to its maker.
 - If you connect a computer over MCP, the connection is intended to stay on your
   local network.
-Your API keys are stored on the phone. You can remove them in Settings. Anything not
+Your API keys are stored on the phone in encrypted storage only. If this device cannot
+provide it, Roxxy refuses to save a key instead of storing it unencrypted. Keys are
+excluded from Android backups and device transfers. You can remove them in Settings. Anything not
 listed here is upstream behavior that has not been fully audited in this fork.
 """.trim()
 

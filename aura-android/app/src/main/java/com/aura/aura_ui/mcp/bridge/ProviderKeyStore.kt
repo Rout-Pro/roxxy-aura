@@ -2,9 +2,6 @@ package com.aura.aura_ui.mcp.bridge
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import com.aura.aura_ui.agent.llm.GenerationConfig
 import com.aura.aura_ui.agent.llm.LlmEndpointCatalog
 import kotlinx.serialization.decodeFromString
@@ -22,50 +19,28 @@ import kotlinx.serialization.json.Json
  * (`provider_key_groq`, …) exactly — a user upgrading keeps every saved key with zero migration.
  * Presets added later carry no such constraint; they simply must never collide with those five.
  *
- * Mirrors [TavilyKeyStore] exactly (AES-256 GCM via an Android-Keystore [MasterKey],
- * with a graceful plain-prefs fallback on ROMs with broken keystores) and shares
+ * Mirrors [TavilyKeyStore] (AES-256 GCM via an Android-Keystore [MasterKey]; fail-closed, no
+ * plaintext fallback, see [SecurePrefs]) and shares
  * the same `aura_secure_keys` prefs file — only the key names differ, so provider
  * keys live alongside the Tavily/Exa keys without a second encrypted store.
  */
 class ProviderKeyStore(context: Context) {
 
+    private val prefs = FailClosedPrefs(context, SecurePrefs.KEYS_FILE)
+
     /**
-     * B2 — whether the API keys are actually at-rest encrypted. False means the Keystore was broken
-     * and we fell back to plaintext prefs; the Settings UI should warn the user (their provider keys
-     * are stored in the clear) rather than reporting silent success. Failing closed is wrong here —
-     * it would make the app unusable on a broken ROM — so keys are still stored, but not silently.
+     * Whether the encrypted store is open. There is no plaintext fallback: when this is false,
+     * keys read as absent and [setKey] refuses (returns false). The UI must say so.
      */
-    val isEncrypted: Boolean
-
-    private val prefs: SharedPreferences
-
-    init {
-        val encrypted = runCatching {
-            val masterKey = MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-            EncryptedSharedPreferences.create(
-                context,
-                PREFS_NAME,
-                masterKey,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-            )
-        }
-        isEncrypted = encrypted.isSuccess
-        prefs = encrypted.getOrElse { t ->
-            Log.w(TAG, "EncryptedSharedPreferences unavailable, falling back to plain prefs", t)
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        }
-    }
+    val isEncrypted: Boolean get() = prefs.isAvailable
 
     /** Per-endpoint API key. Returns null when the user has not configured one. */
     fun getKey(endpointId: String): String? =
         prefs.getString(keyNameFor(endpointId), null)?.takeIf { it.isNotBlank() }
 
-    fun setKey(endpointId: String, value: String) {
-        prefs.edit().putString(keyNameFor(endpointId), value.trim()).apply()
-    }
+    /** Returns false (and stores nothing) when secure storage is unavailable. */
+    fun setKey(endpointId: String, value: String): Boolean =
+        prefs.edit().putString(keyNameFor(endpointId), value.trim()).commit()
 
     fun clearKey(endpointId: String) {
         prefs.edit().remove(keyNameFor(endpointId)).apply()

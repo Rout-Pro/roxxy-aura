@@ -14,6 +14,11 @@ import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class McpServersViewModelTest {
+    @org.junit.Before fun plainSecurePrefsForRobolectric() {
+        // Robolectric has no Android Keystore; back the fail-closed store with plain prefs in tests only.
+        com.aura.aura_ui.mcp.bridge.SecurePrefs.opener = { c, n -> c.getSharedPreferences(n, android.content.Context.MODE_PRIVATE) }
+    }
+
     private val ctx: Context = RuntimeEnvironment.getApplication()
     private fun vm() = McpServersViewModel(McpServerStore(ctx), McpSecretStore(ctx))
 

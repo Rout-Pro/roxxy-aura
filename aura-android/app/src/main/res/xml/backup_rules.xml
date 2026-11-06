@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Auto Backup on Android 11 and lower. Pairing tokens stay on this device:
-     change together with AppTrustedClients and data_extraction_rules.xml. -->
+<!-- Auto Backup on Android 11 and lower. The manifest sets allowBackup=false, so these rules are a
+     second line of defence: API keys, tokens and pairing secrets never leave the device.
+     Change together with data_extraction_rules.xml. -->
 <full-backup-content>
+    <exclude domain="sharedpref" path="aura_secure_keys.xml" />
     <exclude domain="sharedpref" path="aura_mcp_trust.xml" />
+    <exclude domain="sharedpref" path="aura_memory.xml" />
+    <exclude domain="sharedpref" path="aura_learnings.xml" />
+    <exclude domain="sharedpref" path="aura_custom_endpoints.xml" />
+    <exclude domain="sharedpref" path="aura_run_ledger.xml" />
+    <exclude domain="file" path="." />
+    <exclude domain="database" path="." />
 </full-backup-content>

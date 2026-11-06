@@ -12,6 +12,11 @@ import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
 class CompanionViewModelTest {
+    @org.junit.Before fun plainSecurePrefsForRobolectric() {
+        // Robolectric has no Android Keystore; back the fail-closed store with plain prefs in tests only.
+        com.aura.aura_ui.mcp.bridge.SecurePrefs.opener = { c, n -> c.getSharedPreferences(n, android.content.Context.MODE_PRIVATE) }
+    }
+
     private val ctx: Context = RuntimeEnvironment.getApplication()
 
     @Test fun `reflects no key and classic mode by default`() {

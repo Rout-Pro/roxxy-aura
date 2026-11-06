@@ -119,10 +119,9 @@ fun TavilyKeyScreen(
             ) {
                 Button(
                     onClick = {
-                        keyStore.setApiKey(keyText.trim())
-                        savedAt = System.currentTimeMillis()
+                        if (keyStore.setApiKey(keyText.trim())) savedAt = System.currentTimeMillis()
                     },
-                    enabled = keyText.isNotBlank(),
+                    enabled = keyText.isNotBlank() && keyStore.isAvailable,
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("Save")

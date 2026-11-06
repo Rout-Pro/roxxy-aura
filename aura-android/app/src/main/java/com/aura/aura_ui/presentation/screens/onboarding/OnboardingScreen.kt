@@ -1668,8 +1668,16 @@ private fun GeminiKeyStep(onVerifiedChanged: (Boolean) -> Unit) {
                     enabled = !verifying && keyText.isNotBlank(),
                     onClick = {
                         scope.launch {
-                            verifying = true
                             error = null
+                            if (!keyStore.isEncrypted) {
+                                // Fail closed: never send the key anywhere if it cannot be stored securely.
+                                error = "Secure storage is unavailable on this device, so Roxxy cannot " +
+                                    "save your key. Nothing was sent or stored."
+                                verified = false
+                                onVerifiedChanged(false)
+                                return@launch
+                            }
+                            verifying = true
                             val trimmed = keyText.trim()
                             val brainResult = ModelCatalog.fetch(gemini, trimmed)
                             val liveResult = LiveModelResolver.listLiveModels(trimmed)
@@ -1684,7 +1692,13 @@ private fun GeminiKeyStep(onVerifiedChanged: (Boolean) -> Unit) {
                                 liveModels = liveResult.ifEmpty { listOf(liveModel) }
                                     .let { if (it.contains(liveModel)) it else listOf(liveModel) + it }
 
-                                keyStore.setKey(LlmEndpointCatalog.GEMINI_ID, trimmed)
+                                if (!keyStore.setKey(LlmEndpointCatalog.GEMINI_ID, trimmed)) {
+                                    error = "Could not save the key to secure storage. Nothing was stored."
+                                    verified = false
+                                    onVerifiedChanged(false)
+                                    verifying = false
+                                    return@launch
+                                }
                                 keyStore.setSelectedEndpointId(LlmEndpointCatalog.GEMINI_ID)
                                 keyStore.setSelectedModel(LlmEndpointCatalog.GEMINI_ID, brainModel)
                                 val brainInfo = brainResult.getOrNull()?.firstOrNull { it.id == brainModel }
