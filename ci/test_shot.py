@@ -77,6 +77,24 @@ class T(unittest.TestCase):
     def test_stop_dialog_for_other_permission_even_with_dont_allow(self):
         res, d, _ = run(graph(mic={"png": "synth_other_perm_dialog.png"}))
         self.assertEqual(res[0], "FAIL"); self.assertEqual(len(d.taps), 1)  # only the mic row tap; never tapped Don't allow
+    def test_api30_real_dialog_taps_deny_whole_line(self):
+        # REAL API 30 capture (mic_dialog_api30_real.png): the refusal button reads "Deny"; "Deny" sits at (160,456).
+        res, d, _ = run(graph(mic={"png": "mic_dialog_api30_real.png", "taps": [((100, 440, 220, 472), "s5b")]}))
+        self.assertEqual(res[0], "STOP", res)
+        mic_taps = [t for t in d.taps if t[0] == "mic"]
+        self.assertEqual(len(mic_taps), 1); self.assertTrue(inside((100, 440, 220, 472), mic_taps[0][1], mic_taps[0][2]))
+    def test_synthetic_deny_dialog_taps_deny(self):
+        res, d, _ = run(graph(mic={"png": "synth_mic_dialog_deny.png"}))
+        self.assertEqual(res[0], "STOP", res)
+    def test_stop_when_both_refusal_labels_present(self):
+        res, d, _ = run(graph(mic={"png": "synth_mic_both_labels.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertIn("matched 2 times", res[1]); self.assertEqual([t for t in d.taps if t[0] == "mic"], [])
+    def test_stop_when_no_refusal_label(self):
+        res, d, _ = run(graph(mic={"png": "synth_mic_no_refusal.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertIn("matched 0 times", res[1]); self.assertEqual([t for t in d.taps if t[0] == "mic"], [])
+    def test_stop_other_permission_with_deny_never_tapped(self):
+        res, d, _ = run(graph(mic={"png": "synth_other_perm_deny.png"}))
+        self.assertEqual(res[0], "FAIL"); self.assertEqual([t for t in d.taps if t[0] == "mic"], [])
     def test_stop_if_no_dialog_appears(self):
         res, d, _ = run(graph(s5={"taps": [(MIC_ROW, "s5")]}))
         self.assertEqual(res[0], "FAIL"); self.assertIn("foreground", res[1] + "foreground")

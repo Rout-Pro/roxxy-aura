@@ -15,6 +15,10 @@ def draw(name, items, bg="white", blur=0):
 SKIP = ("Skip for now", 160, 617, 14)
 S = {
  "synth_mic_dialog.png": [("Allow Roxxy to record", 160, 300, 16), ("audio?", 160, 325, 16), ("While using the app", 160, 380, 15), ("Only this time", 160, 420, 15), ("Don't allow", 160, 460, 15)],
+ "synth_mic_dialog_deny.png": [("Allow Roxxy to record", 160, 300, 16), ("audio?", 160, 325, 16), ("While using the app", 160, 380, 15), ("Only this time", 160, 420, 15), ("Deny", 160, 460, 15)],
+ "synth_mic_both_labels.png": [("Allow Roxxy to record", 160, 300, 16), ("audio?", 160, 325, 16), ("Only this time", 160, 420, 15), ("Don't allow", 160, 460, 15), ("Deny", 160, 500, 15)],
+ "synth_mic_no_refusal.png": [("Allow Roxxy to record", 160, 300, 16), ("audio?", 160, 325, 16), ("While using the app", 160, 380, 15), ("Only this time", 160, 420, 15)],
+ "synth_other_perm_deny.png": [("Allow Camera to take", 160, 300, 16), ("pictures?", 160, 325, 16), ("Deny", 160, 460, 15)],
  "synth_step6.png": [("Roxxy Virtual Keyboard", 160, 108, 14), ("Automated Typing", 160, 300, 14), SKIP],
  "synth_step7.png": [("1/2: Push Notifications", 160, 108, 14), ("2/2: Live Alerts & Listener", 160, 170, 14), SKIP],
  "synth_key.png": [("Bring your own Gemini key", 160, 108, 14), ("Verify Key", 160, 590, 15)],

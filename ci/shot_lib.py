@@ -124,8 +124,13 @@ def _run(s, dev, log):
     dev.sleep(2)
     # The question wraps unpredictably, so each word is matched on its own: the dialog must name
     # Roxxy and the audio permission, and have exactly one "Don't allow".
-    png = s.screen("c1_mic_prompt", "perm", ("dont allow",), loose=("roxxy", "record", "audio"))
-    before = s.tap_phrase(png, "dont allow", "perm")
+    png = s.screen("c1_mic_prompt", "perm", (), loose=("roxxy", "record", "audio"))
+    # The refusal button is "Don't allow" on API 33 and "Deny" on API 30: accept exactly ONE of the two,
+    # matched as a whole line. Zero or both present means an unknown dialog, so stop.
+    labels = [l for l in ("dont allow", "deny") if s.find(png, l)]
+    if len(labels) != 1:
+        raise Stop("refusal button 'dont allow'/'deny' matched %d times on %s (need exactly 1 label)" % (len(labels), os.path.basename(png)))
+    before = s.tap_phrase(png, labels[0], "perm")
     dev.sleep(2)
     png = s.screen("c2_mic_refused", "app", h5)
     log("mic refused; back on step 5 with Skip")

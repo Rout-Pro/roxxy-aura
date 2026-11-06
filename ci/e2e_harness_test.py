@@ -101,6 +101,15 @@ class E2E(unittest.TestCase):
     def test_other_permission_dialog_never_tapped(self):
         p, out, log = self._fail(lambda s: s["mic"].update(png="synth_other_perm_dialog.png"), "matched 0 times")
         self.assertNotIn("tap 'dont allow'", log)
+    def test_other_permission_deny_dialog_never_tapped(self):
+        p, out, log = self._fail(lambda s: s["mic"].update(png="synth_other_perm_deny.png"), "matched 0 times")
+        self.assertNotIn("tap 'deny'", log)
+    def test_both_refusal_labels_stop(self):
+        self._fail(lambda s: s["mic"].update(png="synth_mic_both_labels.png"), "matched 2 times")
+    def test_api30_deny_dialog_passes_full_entrypoint(self):
+        g = graph(); g["states"]["mic"].update(png="synth_mic_dialog_deny.png")
+        p, out, log = self.run_harness(g)
+        self.assertEqual(p.returncode, 0, p.stdout + log); self.assertIn("tap 'deny'", log); self.assertIn("RESULT: STOP", log)
     def test_capture_failure_propagates(self):
         self._fail(lambda s: s["s6"].update(shot_empty=True), "screenshot capture failed")
     def test_stale_capture_propagates(self):

@@ -1,4 +1,4 @@
-name: ARM translation check (exact shipped candidate, API 30 google_apis x86_64)
+name: ARM translation check (exact candidate, build 562, API 30 google_apis x86_64)
 # Installs the EXACT candidate APK from a previous Build run (hash-checked) on an emulator image that
 # advertises arm64-v8a through Google's ARM translation. This is translation evidence, not ARM hardware.
 on: workflow_dispatch
@@ -6,8 +6,8 @@ permissions:
   contents: read
   actions: read
 env:
-  SOURCE_RUN: "42251525189"
-  EXPECT_SHA256: "69f58bd44048eb72e160b6b1dd87e2b231f9b4ac3c5ac97b2fc439149a24f2a9"
+  SOURCE_RUN: "42254994055"
+  EXPECT_SHA256: "ee4b291be95c2b01208a01f1f0a3d618f3257b39b86c277424fefebe6a37d5d0"
 jobs:
   arm:
     runs-on: ubuntu-latest
