@@ -126,12 +126,17 @@ def run(dev, log):
         return "FAIL", "ambiguous: %d toggles on service page" % len(sw2)
     dev.tap(sw2[0])
     r = dev.dump("a3_after_toggle")
-    btn1 = [n for n in r.iter("node") if n.get("resource-id") == "android:id/button1"]
-    allow = btn1[0] if btn1 else find_text(r, "Allow", "OK", "Turn on")
+    ctx = [t for t in texts(r) if "Roxxy" in t]
+    allow = find_text(r, "Allow", "OK", "Turn on")
     if allow is not None:
-        log("confirm dialog button: %r" % (allow.get("text"),))
+        # An affirmative label alone is not enough: the dialog must be about the Roxxy service.
+        if not ctx or in_app(r):
+            return "FAIL", "unknown dialog (no Roxxy consent context); not approving"
+        log("confirm dialog context=%r button=%r" % (ctx[0], allow.get("text")))
         dev.tap(allow if allow.get("clickable") == "true" else (clickable_for(r, allow.get("text")) or allow))
         r = dev.dump("a4_after_confirm")
+    elif any(n.get("resource-id") == "android:id/button1" for n in r.iter("node")):
+        return "FAIL", "dialog with unrecognized affirmative label; not approving"
     else:
         c3 = checkables(r)
         if in_app(r) or not c3 or c3[0].get("checked") != "true":
