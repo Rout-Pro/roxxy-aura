@@ -1,5 +1,5 @@
-name: Bounded key run (exact candidate 562, API 33 x86_64, one pass)
-# ONE bounded pass: exact candidate (hash-checked), native x86_64 emulator, typed test key -> Verify -> Home.
+name: Bounded key run (exact candidate 562, API 30 ndk_translation, one pass)
+# ONE bounded pass: exact candidate (hash-checked), API 30 google_apis x86_64 with ARM translation, typed test key -> Verify -> Home.
 # Key comes from the temporary secret ROXXY_TEST_KEY (masked); removed and revoked afterwards. workflow_dispatch only.
 on: workflow_dispatch
 permissions:
@@ -42,10 +42,11 @@ jobs:
       - uses: reactivecircus/android-emulator-runner@v2
         env:
           APK_PATH: ${{ github.workspace }}/candidate/app-release.apk
+          REQUIRE_ABI: arm64-v8a
           KEY_PHASE: "1"
           ROXXY_TEST_KEY: ${{ secrets.ROXXY_TEST_KEY }}
         with:
-          api-level: 33
+          api-level: 30
           arch: x86_64
           target: google_apis
           script: ./ci/startup_check.sh
