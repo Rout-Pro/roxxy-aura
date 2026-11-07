@@ -81,6 +81,11 @@ if __name__ == "__main__":
             status, detail = "FAIL", "key phase stopped: %s" % e
         finally:
             key_phase.wipe_private()
+            try:
+                import diag_phase
+                diag_phase.capture_os(dev, print)
+            except Exception as e:
+                print("os evidence capture failed:", type(e).__name__)
         print("RESULT:", status, "-", detail)
         print("NOT EXERCISED: any AI task response, overlay, voice, ARM hardware, user device")
         sys.exit(0 if status == "PASS" else 1)

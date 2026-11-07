@@ -48,3 +48,13 @@ def run_diag(dev, log, find=None, out="out"):
     log("exit-info lines kept=%d dropped=%d; event lines kept=%d (others dropped=%d)" % (len(ei), d1, len(ev), d2))
     survived = bool(before) and before == after and fg and shot_lib.activity_ok(fg[0], fg[1], "app")
     return ("SURVIVED" if survived else "CHANGED"), "pid %s -> %s, foreground %s" % (before, after, fg)
+
+
+def capture_os(dev, log, out="out"):
+    """Scrubbed OS exit-info + event lines for the app, no app output. Safe in key runs (whitelist + token redaction)."""
+    ei, d1 = scrub(dev.run("adb shell dumpsys activity exit-info %s" % PKG), EXIT_OK)
+    ev, d2 = scrub(dev.run("adb logcat -b events -d"), EVENT_OK)
+    ev = [l for l in ev if PKG in l]
+    with open(os.path.join(out, "os_exit_info.txt"), "w") as f: f.write("\n".join(ei) + "\n")
+    with open(os.path.join(out, "os_events.txt"), "w") as f: f.write("\n".join(ev) + "\n")
+    log("os evidence: exit-info kept=%d dropped=%d, event lines kept=%d (dropped=%d)" % (len(ei), d1, len(ev), d2))

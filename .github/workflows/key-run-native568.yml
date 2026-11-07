@@ -1,13 +1,13 @@
-name: Bounded key run (exact candidate 562, API 30 ndk_translation, one pass)
-# ONE bounded pass: exact candidate (hash-checked), API 30 google_apis x86_64 with ARM translation, typed test key -> Verify -> Home.
+name: Bounded key run (exact artifact 568 native x86_64, API 33, one pass)
+# ONE bounded pass: exact artifact 568 (build source a206939, run 42322684202, sha-checked), native API 33 x86_64 emulator, typed test key -> Verify -> Home.
 # Key comes from the temporary secret ROXXY_TEST_KEY (masked); removed and revoked afterwards. workflow_dispatch only.
 on: workflow_dispatch
 permissions:
   contents: read
   actions: read
 env:
-  SOURCE_RUN: "42254994055"
-  EXPECT_SHA256: "ee4b291be95c2b01208a01f1f0a3d618f3257b39b86c277424fefebe6a37d5d0"
+  SOURCE_RUN: "42322684202"
+  EXPECT_SHA256: "23b5637b9157607acd11bebda8d42df861f022a441d062c62e6d30380f2354d6"
 jobs:
   arm:
     runs-on: ubuntu-latest
@@ -16,7 +16,7 @@ jobs:
       - name: Fetch the exact candidate from the Build run and verify its hash
         uses: actions/download-artifact@v4
         with:
-          name: roxxy-apk
+          name: diag-native-evidence
           run-id: ${{ env.SOURCE_RUN }}
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
@@ -24,7 +24,7 @@ jobs:
       - name: Verify hash (stop on mismatch)
         run: |
           ls -l candidate
-          echo "$EXPECT_SHA256  candidate/app-release.apk" | sha256sum -c -
+          echo "$EXPECT_SHA256  candidate/diag-app-release.apk" | sha256sum -c -
       - name: OCR tools (tesseract + Pillow)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
@@ -41,12 +41,11 @@ jobs:
           sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
       - uses: reactivecircus/android-emulator-runner@v2
         env:
-          APK_PATH: ${{ github.workspace }}/candidate/app-release.apk
-          REQUIRE_ABI: arm64-v8a
+          APK_PATH: ${{ github.workspace }}/candidate/diag-app-release.apk
           KEY_PHASE: "1"
           ROXXY_TEST_KEY: ${{ secrets.ROXXY_TEST_KEY }}
         with:
-          api-level: 30
+          api-level: 33
           arch: x86_64
           target: google_apis
           script: ./ci/startup_check.sh
@@ -75,7 +74,7 @@ jobs:
       - name: Keep the exact APK with the evidence
         if: always()
         run: |
-          mkdir -p out && cp candidate/app-release.apk out/candidate-app-release.apk && sha256sum out/candidate-app-release.apk | tee out/candidate.sha256
+          mkdir -p out && cp candidate/diag-app-release.apk out/candidate-app-release.apk && sha256sum out/candidate-app-release.apk | tee out/candidate.sha256
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: arm-translation-evidence, path: out/* }
+        with: { name: key-run-evidence, path: out/* }
