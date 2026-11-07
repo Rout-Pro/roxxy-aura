@@ -1,0 +1,92 @@
+name: Keyless native diagnostic (release config + x86_64 ABI, API 33) - own artifact identity, NOT candidate 562
+# ONE pass. No key, no provider call. Builds the same source with ONE packaging edit (x86_64 added to the release
+# abiFilters), compares it with candidate 562 (manifest, badging, native libs, signer), then focuses the EMPTY key
+# field and records pixels, pid before/after, OS exit-info and event lines. workflow_dispatch only.
+on: workflow_dispatch
+permissions:
+  contents: read
+  actions: read
+env:
+  CAND_RUN: "42254994055"
+  CAND_SHA256: "ee4b291be95c2b01208a01f1f0a3d618f3257b39b86c277424fefebe6a37d5d0"
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: OCR tools
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
+          python3 -c "import PIL" 2>/dev/null || python3 -m pip install --quiet pillow
+      - name: Driver tests (no emulator)
+        run: |
+          python3 ci/test_walk.py
+          python3 ci/test_shot.py
+          python3 ci/test_diag_phase.py
+          python3 ci/e2e_harness_test.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: roxxy-apk
+          run-id: ${{ env.CAND_RUN }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          path: candidate
+      - name: Verify candidate 562 hash
+        run: echo "$CAND_SHA256  candidate/app-release.apk" | sha256sum -c -
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+      - name: Build release APK with x86_64 added (only source edit)
+        working-directory: aura-android
+        env:
+          KS_B64: ${{ secrets.ROXXY_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ROXXY_KEYSTORE_PASSWORD }}
+        run: |
+          mkdir -p ../out/compare
+          echo "app source vs 815c481 (candidate 562 source):"; git diff --stat 815c481 HEAD -- . | tail -3 | tee ../out/compare/app_source_vs_815c481.txt
+          sed -i 's/abiFilters += listOf("arm64-v8a", "armeabi-v7a")/abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")/' app/build.gradle.kts
+          git diff -- app/build.gradle.kts | tee ../out/compare/source_delta.diff
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/roxxy.jks"
+          { echo "aura.releaseStoreFile=$RUNNER_TEMP/roxxy.jks"; echo "aura.releaseStorePassword=$KS_PASS"; echo "aura.releaseKeyAlias=roxxy"; echo "aura.releaseKeyPassword=$KS_PASS"; } >> local.properties
+          chmod +x gradlew && ./gradlew :app:assembleRelease --no-daemon
+      - name: Compare with candidate 562 and pin identity
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1); echo "build-tools $BT"
+          NEW=$(ls aura-android/app/build/outputs/apk/release/*.apk | head -1); OLD=candidate/app-release.apk
+          C=out/compare; mkdir -p $C
+          sha256sum "$NEW" "$OLD" | tee $C/sha256.txt; ls -l "$NEW" "$OLD" | tee $C/sizes.txt
+          for n in new old; do
+            f=$NEW; [ $n = old ] && f=$OLD
+            $BT/aapt2 dump badging $f | grep -v "^native-code\|^locales\|^densities" > $C/badging_$n.txt
+            $BT/aapt2 dump xmltree --file AndroidManifest.xml $f > $C/manifest_$n.txt
+            unzip -l $f | awk '{print $1, $4}' | grep ' lib/' | sort -k2 > $C/libs_$n.txt
+            $BT/apksigner verify --print-certs $f 2>&1 | grep -E "Signer #1 certificate (DN|SHA-256)|Verified using" > $C/signer_$n.txt
+          done
+          diff $C/badging_old.txt $C/badging_new.txt > $C/badging.diff || true
+          diff $C/manifest_old.txt $C/manifest_new.txt > $C/manifest.diff || true
+          diff <(cut -d' ' -f2 $C/libs_old.txt) <(cut -d' ' -f2 $C/libs_new.txt) > $C/libs_names.diff || true
+          diff $C/signer_old.txt $C/signer_new.txt > $C/signer.diff || true
+          for d in badging manifest libs_names signer; do echo "== $d.diff ($(wc -l < $C/$d.diff) lines)"; head -40 $C/$d.diff; done
+          cp "$NEW" "$RUNNER_TEMP/diag-app-release.apk"; echo "APK_PATH=$RUNNER_TEMP/diag-app-release.apk" >> $GITHUB_ENV
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          KEY_PHASE: "diag"
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          script: ./ci/startup_check.sh
+      - name: Keep the diagnostic APK identity with the evidence
+        if: always()
+        run: |
+          mkdir -p out && cp "$APK_PATH" out/diag-app-release.apk 2>/dev/null; sha256sum out/diag-app-release.apk | tee out/diag-app.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: diag-native-evidence, path: out/* }

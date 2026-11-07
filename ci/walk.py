@@ -45,6 +45,7 @@ class Adb:
         # argv only, output discarded: the value is never echoed by a shell or logged
         subprocess.run(["adb", "shell", "input", "text", key], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
         time.sleep(1)
+    def run(self, c): return sh(c)
     def tap_xy(self, x, y): sh("adb shell input tap %d %d" % (x, y)); time.sleep(3)
     def after_consent(self, log): return shot_lib.run_after_consent(self, log)
     def back(self): sh("adb shell input keyevent KEYCODE_BACK"); time.sleep(2)
@@ -55,6 +56,15 @@ if __name__ == "__main__":
     dev = Adb()
     print("size h:", dev.screen_h)
     status, detail = W.run(dev, print)
+    if status == "GATE" and os.environ.get("KEY_PHASE") == "diag":
+        import diag_phase
+        try:
+            res, det = diag_phase.run_diag(dev, print)
+            print("RESULT: DIAG-%s - %s" % (res, det))
+        except shot_lib.Stop as e:
+            print("RESULT: FAIL - diag stopped: %s" % e); sys.exit(1)
+        print("NOT EXERCISED: typing, Verify, Home, any provider call (no key exists in this run)")
+        sys.exit(0)
     if status == "GATE":
         import key_phase
         try:

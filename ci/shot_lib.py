@@ -162,7 +162,7 @@ def _run(s, dev, log):
         log("reached %s (%s)" % (label, heading))
         if last:
             s.unique(png, "verify key")
-            if os.environ.get("KEY_PHASE") == "1":
+            if os.environ.get("KEY_PHASE") in ("1", "diag"):
                 return "GATE", "reached key gate; key phase follows"
             # Evidence only (no taps in fields): scroll once and keep a second screenshot of the gate text.
             dev.scroll_down(); dev.sleep(2)
