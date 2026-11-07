@@ -54,14 +54,15 @@ jobs:
           chmod +x gradlew && ./gradlew :app:assembleRelease --no-daemon
       - name: Compare with candidate 562 and pin identity
         run: |
+          set +e
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1); echo "build-tools $BT"
           NEW=$(ls aura-android/app/build/outputs/apk/release/*.apk | head -1); OLD=candidate/app-release.apk
           C=out/compare; mkdir -p $C
           sha256sum "$NEW" "$OLD" | tee $C/sha256.txt; ls -l "$NEW" "$OLD" | tee $C/sizes.txt
           for n in new old; do
             f=$NEW; [ $n = old ] && f=$OLD
-            $BT/aapt2 dump badging $f | grep -v "^native-code\|^locales\|^densities" > $C/badging_$n.txt
-            $BT/aapt2 dump xmltree --file AndroidManifest.xml $f > $C/manifest_$n.txt
+            $BT/aapt2 dump badging $f > $C/badging_full_$n.txt 2> $C/badging_err_$n.txt; echo "aapt2 badging rc=$? ($n)"; grep -v "^native-code\|^locales\|^densities" $C/badging_full_$n.txt > $C/badging_$n.txt
+            $BT/aapt2 dump xmltree --file AndroidManifest.xml $f > $C/manifest_$n.txt 2>&1
             unzip -l $f | awk '{print $1, $4}' | grep ' lib/' | sort -k2 > $C/libs_$n.txt
             $BT/apksigner verify --print-certs $f 2>&1 | grep -E "Signer #1 certificate (DN|SHA-256)|Verified using" > $C/signer_$n.txt
           done
