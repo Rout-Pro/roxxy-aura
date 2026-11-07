@@ -38,6 +38,13 @@ class Adb:
         p = "out/shot_%s.png" % name
         sh("rm -f %s; adb exec-out screencap -p > %s" % (p, p))
         return p if os.path.exists(p) and os.path.getsize(p) > 0 else None
+    def shot_to(self, p):
+        sh("rm -f %s; adb exec-out screencap -p > %s" % (p, p))
+        return p if os.path.exists(p) and os.path.getsize(p) > 0 else None
+    def type_secret(self, key):
+        # argv only, output discarded: the value is never echoed by a shell or logged
+        subprocess.run(["adb", "shell", "input", "text", key], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+        time.sleep(1)
     def tap_xy(self, x, y): sh("adb shell input tap %d %d" % (x, y)); time.sleep(3)
     def after_consent(self, log): return shot_lib.run_after_consent(self, log)
     def back(self): sh("adb shell input keyevent KEYCODE_BACK"); time.sleep(2)
@@ -48,6 +55,25 @@ if __name__ == "__main__":
     dev = Adb()
     print("size h:", dev.screen_h)
     status, detail = W.run(dev, print)
+    if status == "GATE":
+        import key_phase
+        try:
+            cls = key_phase.run_key_phase(dev, print)
+            status, detail = "PASS", "key verified, step 9 (%s), Home reached" % cls
+            try:
+                sh("adb shell am force-stop com.roxxy.aura; adb shell monkey -p com.roxxy.aura -c android.intent.category.LAUNCHER 1"); time.sleep(12)
+                s2 = shot_lib.Shots(dev, print); rp = s2.capture("k10_restart", "app")
+                s2.unique(rp, "talk to roxxy", loose=True); s2.absent(rp, "bring your own gemini key")
+                detail += "; after force-stop+relaunch app opens on Home without the key gate (stored-key read not directly observed)"
+            except shot_lib.Stop as e:
+                status, detail = "FAIL", "restart check stopped: %s" % e
+        except shot_lib.Stop as e:
+            status, detail = "FAIL", "key phase stopped: %s" % e
+        finally:
+            key_phase.wipe_private()
+        print("RESULT:", status, "-", detail)
+        print("NOT EXERCISED: any AI task response, overlay, voice, ARM hardware, user device")
+        sys.exit(0 if status == "PASS" else 1)
     print("RESULT:", status, "-", detail)
     print("NOT EXERCISED: anything after the key gate; nothing is entered there")
     sys.exit(0 if status == "STOP" else 1)

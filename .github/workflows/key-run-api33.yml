@@ -1,0 +1,80 @@
+name: Bounded key run (exact candidate 562, API 33 x86_64, one pass)
+# ONE bounded pass: exact candidate (hash-checked), native x86_64 emulator, typed test key -> Verify -> Home.
+# Key comes from the temporary secret ROXXY_TEST_KEY (masked); removed and revoked afterwards. workflow_dispatch only.
+on: workflow_dispatch
+permissions:
+  contents: read
+  actions: read
+env:
+  SOURCE_RUN: "42254994055"
+  EXPECT_SHA256: "ee4b291be95c2b01208a01f1f0a3d618f3257b39b86c277424fefebe6a37d5d0"
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the exact candidate from the Build run and verify its hash
+        uses: actions/download-artifact@v4
+        with:
+          name: roxxy-apk
+          run-id: ${{ env.SOURCE_RUN }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          path: candidate
+      - name: Verify hash (stop on mismatch)
+        run: |
+          ls -l candidate
+          echo "$EXPECT_SHA256  candidate/app-release.apk" | sha256sum -c -
+      - name: OCR tools (tesseract + Pillow)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr
+          python3 -c "import PIL" 2>/dev/null || python3 -m pip install --quiet pillow
+      - name: Walker tests (no emulator)
+        run: |
+          python3 ci/test_walk.py
+          python3 ci/test_shot.py
+          python3 ci/test_key_phase.py
+          python3 ci/e2e_harness_test.py
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        env:
+          APK_PATH: ${{ github.workspace }}/candidate/app-release.apk
+          KEY_PHASE: "1"
+          ROXXY_TEST_KEY: ${{ secrets.ROXXY_TEST_KEY }}
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          script: ./ci/startup_check.sh
+      - name: Scan artifacts for the key (delete evidence if found)
+        if: always()
+        env:
+          ROXXY_TEST_KEY: ${{ secrets.ROXXY_TEST_KEY }}
+        run: |
+          rm -f out/logcat.txt.bak
+          if [ -n "$ROXXY_TEST_KEY" ] && grep -rqF -- "$ROXXY_TEST_KEY" out 2>/dev/null; then
+            echo "KEY FOUND IN ARTIFACTS - deleting out/"; rm -rf out; mkdir out; echo "evidence withheld: key string found" > out/WITHHELD.txt
+          else echo "key string not found in text artifacts"; fi
+          python3 - <<'PY'
+          import glob, subprocess, os
+          # OCR every persisted screenshot and withhold if it contains the AQ. key prefix
+          bad = []
+          for f in glob.glob("out/*.png"):
+              try: txt = subprocess.run(["tesseract", f, "-"], capture_output=True, text=True, timeout=60).stdout
+              except Exception: txt = ""
+              if "AQ." in txt.replace(" ", ""): bad.append(f)
+          if bad:
+              for f in bad: os.remove(f)
+              print("removed screenshots with key-like text:", bad)
+          else: print("no key-like text in persisted screenshots")
+          PY
+      - name: Keep the exact APK with the evidence
+        if: always()
+        run: |
+          mkdir -p out && cp candidate/app-release.apk out/candidate-app-release.apk && sha256sum out/candidate-app-release.apk | tee out/candidate.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: arm-translation-evidence, path: out/* }
